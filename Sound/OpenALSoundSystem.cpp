@@ -441,9 +441,9 @@ ISound::PlaybackState OpenALSoundSystem::OpenALSound::GetPlaybackState() {
     }
 }
 
-void OpenALSoundSystem::OpenALSound::SetSampleOffset(int offset) {
+void OpenALSoundSystem::OpenALSound::SetSampleOffset(int samples) {
     ALCenum error;
-    alSourcei(sourceID, AL_SAMPLE_OFFSET, (ALint)offset);
+    alSourcei(sourceID, AL_SAMPLE_OFFSET, (ALint)samples);
     if ((error = alGetError()) != AL_NO_ERROR) {
       throw Exception("tried to set offset by sample but got: "
 		      + Convert::ToString(error));
@@ -451,14 +451,34 @@ void OpenALSoundSystem::OpenALSound::SetSampleOffset(int offset) {
 }
 
 int OpenALSoundSystem::OpenALSound::GetSampleOffset() {
-    ALint offset;
+    ALint samples;
     ALCenum error;
-    alGetSourcei(sourceID, AL_SAMPLE_OFFSET, &offset);
+    alGetSourcei(sourceID, AL_SAMPLE_OFFSET, &samples);
     if ((error = alGetError()) != AL_NO_ERROR) {
       throw Exception("tried to get offset by sample but got: "
 		      + Convert::ToString(error));
     }
-    return offset;
+    return samples;
+}
+
+void OpenALSoundSystem::OpenALSound::SetTimeOffset(float seconds) {
+    ALCenum error;
+    alSourcei(sourceID, AL_SEC_OFFSET, (ALfloat)seconds);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to set offset by seconds but got: "
+		      + Convert::ToString(error));
+    }
+}
+
+float OpenALSoundSystem::OpenALSound::GetTimeOffset() {
+    ALint seconds;
+    ALCenum error;
+    alGetSourcei(sourceID, AL_SEC_OFFSET, &seconds);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get offset by time but got: "
+		      + Convert::ToString(error));
+    }
+    return seconds;
 }
 
 

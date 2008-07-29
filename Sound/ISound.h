@@ -56,7 +56,7 @@ public:
     virtual int GetSampleOffset() = 0;
 
     virtual void SetTimeOffset(float seconds) = 0;
-    virtual float GetTimeeOffset() = 0;
+    virtual float GetTimeOffset() = 0;
 
 
     virtual PlaybackState GetPlaybackState() = 0;
