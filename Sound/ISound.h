@@ -52,8 +52,12 @@ public:
     virtual void SetLooping(bool loop) = 0;
     virtual bool GetLooping() = 0;
     
-    virtual void SetSampleOffset(int offset) = 0;
+    virtual void SetSampleOffset(int samples) = 0;
     virtual int GetSampleOffset() = 0;
+
+    virtual void SetTimeOffset(float seconds) = 0;
+    virtual float GetTimeeOffset() = 0;
+
 
     virtual PlaybackState GetPlaybackState() = 0;
 
