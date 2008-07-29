@@ -82,10 +82,16 @@ void OpenALSoundSystem::Process(const float deltaTime, const float percent) {
         dir.ToArray(orientation);
         up.ToArray(&orientation[3]);
         alListenerfv(AL_ORIENTATION, orientation);
-    }
+
+        // update listener velocity
+        Vector<3,float> vel = (vvpos - prevPos) * (1/deltaTime*1000);
+        prevPos = vvpos;
+        alListener3f(AL_VELOCITY, vel[0], vel[1], vel[2]);
+        //logger.info << "listener vel: " << vel << logger.end;
+   }
 
     //@todo optimize this by saving the ref, and reinit pos in visitor
-    SoundNodeVisitor* snv = new SoundNodeVisitor();
+    SoundNodeVisitor* snv = new SoundNodeVisitor(deltaTime);
     theroot->Accept(*snv);
     delete snv;
 }
@@ -439,6 +445,7 @@ ISound::PlaybackState OpenALSoundSystem::OpenALSound::GetPlaybackState() {
     case AL_PAUSED: return PAUSED;
     case AL_STOPPED: return STOPPED;
     }
+    return INITIAL; // TODO: what todo here???
 }
 
 void OpenALSoundSystem::OpenALSound::SetSampleOffset(int samples) {
@@ -479,6 +486,29 @@ float OpenALSoundSystem::OpenALSound::GetTimeOffset() {
 		      + Convert::ToString(error));
     }
     return seconds;
+}
+
+void OpenALSoundSystem::OpenALSound::SetVelocity(Vector<3,float> vel) {
+    ALCenum error;
+    ALfloat v[3];
+    vel.ToArray(v);
+    alSourcefv(sourceID, AL_VELOCITY, v);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to set velocity but got: "
+		      + Convert::ToString(error));
+    }
+    //logger.info << "source vel: " << vel << logger.end;
+}
+
+Vector<3,float> OpenALSoundSystem::OpenALSound::GetVelocity() {
+    ALfloat v[3];
+    ALCenum error;
+    alGetSourcefv(sourceID, AL_VELOCITY, v);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get offset by time but got: "
+		      + Convert::ToString(error));
+    }
+    return Vector<3,float>(v[0],v[1],v[2]);
 }
 
 

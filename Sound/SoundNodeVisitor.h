@@ -16,19 +16,24 @@
 #include <Math/Vector.h>
 #include <Math/Quaternion.h>
 
+#include <map>
+
 namespace OpenEngine {
 namespace Sound {
 
 using namespace OpenEngine::Scene;
+using std::map;
 
 class SoundNodeVisitor : public ISceneNodeVisitor {
 private:
     //the current position and rotation
     Vector<3, float> pos;
     Quaternion<float>* dir;
+    map<ISound*,Vector<3,float> > soundmap;
+    float deltaTime;
 
 public:
-    SoundNodeVisitor();
+    SoundNodeVisitor(float deltaTime);
     ~SoundNodeVisitor();
 
     void VisitTransformationNode(TransformationNode* node);

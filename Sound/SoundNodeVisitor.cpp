@@ -8,7 +8,7 @@ namespace Sound {
 
 using OpenEngine::Core::Exception;
 
-SoundNodeVisitor::SoundNodeVisitor() {
+SoundNodeVisitor::SoundNodeVisitor(float deltaTime): deltaTime(deltaTime) {
     //init to assumed startposition
     pos = Vector<3,float>(0.0, 0.0, 0.0);
 
@@ -40,8 +40,12 @@ void SoundNodeVisitor::VisitTransformationNode(TransformationNode* node) {
 
 void SoundNodeVisitor::VisitSoundNode(SoundNode* node) {
     //setup the source settings
-    node->GetSound()->SetPosition(pos);
-    node->GetSound()->SetRotation(*dir);
+    ISound* s = node->GetSound();
+    Vector<3,float> prevPos = soundmap[s];
+    soundmap[s] = pos;
+    s->SetVelocity((pos - prevPos)* (1/(deltaTime*1000)));
+    s->SetPosition(pos);
+    s->SetRotation(*dir);
 
     node->VisitSubNodes(*this);
 }

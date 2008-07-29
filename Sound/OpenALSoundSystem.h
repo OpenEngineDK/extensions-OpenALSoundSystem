@@ -48,7 +48,7 @@ class OpenALSoundSystem : public ISoundSystem {
 private:
     ISceneNode* theroot;
     IViewingVolume* vv;
-    
+    Vector<3,float> prevPos;
     
     void Init();
 
@@ -78,6 +78,9 @@ private:
         
         PlaybackState GetPlaybackState();
         
+        void SetVelocity(Vector<3,float> vel);
+        Vector<3,float> GetVelocity();
+
         Vector<3,float> GetPosition();
         void SetPosition(Vector<3,float> pos);
         Quaternion<float> GetRotation();

@@ -78,6 +78,10 @@ public:
     virtual void SetPitch(float pitch) = 0;
     virtual float GetPitch() = 0;
 
+    virtual void SetVelocity(Vector<3,float> vel) = 0;
+    virtual Vector<3,float> GetVelocity() = 0;
+    
+
     // spatial/geometrical attributes
     virtual void SetDirection(Vector<3,float> dir) = 0;
     virtual Vector<3,float> GetDirection() = 0;
