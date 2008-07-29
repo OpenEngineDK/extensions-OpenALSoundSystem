@@ -21,6 +21,8 @@ using OpenEngine::Math::Vector;
 using OpenEngine::Math::Quaternion;
 using namespace OpenEngine::Resources;
 
+
+
 /**
  * ISound.
  * Interface for a sound source in OpenEngine.
@@ -31,21 +33,63 @@ class ISound {
 private:
 
 public:
+    enum PlaybackState {
+        INITIAL,
+        PLAYING,
+        PAUSED,
+        STOPPED
+    };
+
+    virtual ~ISound() {}
+
     virtual void Initialize() = 0;
+ 
+    // playback execution methods
     virtual void Play() = 0;
     virtual void Stop() = 0;
     virtual void Pause() = 0;
-    virtual void SetPosition(Vector<3,float> pos) = 0;
-    virtual Vector<3,float> GetPosition() = 0;
-    virtual Quaternion<float> GetRotation() = 0;
-    virtual void SetRotation(Quaternion<float> rotation) = 0;
+
+    virtual void SetLooping(bool loop) = 0;
+    virtual bool GetLooping() = 0;
+    
+    virtual void SetSampleOffset(int offset) = 0;
+    virtual int GetSampleOffset() = 0;
+
+    virtual PlaybackState GetPlaybackState() = 0;
 
     virtual unsigned int GetID() = 0;
     virtual void SetID(unsigned int) = 0;
 
     virtual ISoundResourcePtr GetResource() = 0;
 
-    virtual ~ISound() {}
+    virtual void SetMaxDistance(float dist) = 0;
+    virtual float GetMaxDistance() = 0;
+
+    virtual void SetMinGain(float gain) = 0;
+    virtual float GetMinGain() = 0;
+
+    virtual void SetMaxGain(float gain) = 0;
+    virtual float GetMaxGain() = 0;
+
+    virtual void SetPitch(float pitch) = 0;
+    virtual float GetPitch() = 0;
+
+    // spatial/geometrical attributes
+    virtual void SetDirection(Vector<3,float> dir) = 0;
+    virtual Vector<3,float> GetDirection() = 0;
+
+    virtual void SetConeInnerAngle(float angle) = 0;
+    virtual float GetConeInnerAngle() = 0;
+
+    virtual void SetConeOuterAngle(float angle) = 0;
+    virtual float GetConeOuterAngle() = 0;
+
+    virtual void SetPosition(Vector<3,float> pos) = 0;
+    virtual Vector<3,float> GetPosition() = 0;
+
+    virtual Quaternion<float> GetRotation() = 0;
+    virtual void SetRotation(Quaternion<float> rotation) = 0;
+
 };
 
 } // NS Sound

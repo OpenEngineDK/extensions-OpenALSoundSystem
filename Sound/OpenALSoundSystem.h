@@ -69,14 +69,47 @@ private:
 	void Play();
 	void Stop();
 	void Pause();
+
+    void SetSampleOffset(int offset);
+    int GetSampleOffset();
+
+    PlaybackState GetPlaybackState();
+
 	Vector<3,float> GetPosition();
 	void SetPosition(Vector<3,float> pos);
 	Quaternion<float> GetRotation();
 	void SetRotation(Quaternion<float> rotation);
 	unsigned int GetID();
 	void SetID(unsigned int);
+    ISoundResourcePtr GetResource();
+
+    void SetMaxDistance(float dist);
+    float GetMaxDistance();
+    
+    void SetLooping(bool loop);
+    bool GetLooping();
+
+    void SetMinGain(float gain);
+    float GetMinGain();
+
+    void SetMaxGain(float gain);
+    float GetMaxGain();
+
 	void SetGain(float gain);
-	ISoundResourcePtr GetResource();
+	float GetGain();
+
+	void SetPitch(float pitch);
+	float GetPitch();
+
+	void SetDirection(Vector<3,float> dir);
+	Vector<3,float> GetDirection();
+
+	void SetConeInnerAngle(float angle);
+	float GetConeInnerAngle();
+
+	void SetConeOuterAngle(float angle);
+	float GetConeOuterAngle();
+
     };
 
 public:

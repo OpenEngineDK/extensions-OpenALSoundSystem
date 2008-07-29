@@ -72,7 +72,16 @@ void OpenALSoundSystem::Process(const float deltaTime, const float percent) {
     if (vv != NULL) {
         Vector<3,float> vvpos = vv->GetPosition();
         alListener3f(AL_POSITION, vvpos[0], vvpos[1], vvpos[2]);
-	//logger.info << "viewing from: " << vvpos << logger.end;
+        //logger.info << "viewing from: " << vvpos << logger.end;
+        
+        // Give camera orientation to openal
+        Quaternion<float> rot = vv->GetDirection();
+        Vector<3,float> up = rot.RotateVector(Vector<3,float>(0,1,0));
+        Vector<3,float> dir = rot.RotateVector(Vector<3,float>(0,0,-1));
+        float orientation[6];
+        dir.ToArray(orientation);
+        up.ToArray(&orientation[3]);
+        alListenerfv(AL_ORIENTATION, orientation);
     }
 
     //@todo optimize this by saving the ref, and reinit pos in visitor
@@ -126,6 +135,7 @@ OpenALSoundSystem::OpenALSound::~OpenALSound() {
 }
 
 void OpenALSoundSystem::OpenALSound::Play() {
+    alDistanceModel(AL_LINEAR_DISTANCE);
     alSourcePlay(sourceID);
     ALCenum error;
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -242,6 +252,215 @@ void OpenALSoundSystem::OpenALSound::SetGain(float gain) {
 		      + Convert::ToString(error));
     }
 }
+
+float OpenALSoundSystem::OpenALSound::GetGain() {
+    float gain;
+    ALCenum error;
+    alGetSourcef(sourceID, AL_GAIN, (ALfloat*)&gain);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get gain but got: "
+		      + Convert::ToString(error));
+    }
+    return gain;
+}
+
+void OpenALSoundSystem::OpenALSound::SetMaxDistance(float dist) {
+    ALCenum error;
+    alSourcef(sourceID, AL_MAX_DISTANCE, (ALfloat)dist);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to set max distance but got: "
+		      + Convert::ToString(error));
+    }
+}
+
+float OpenALSoundSystem::OpenALSound::GetMaxDistance() {
+    float dist;
+    ALCenum error;
+    alGetSourcef(sourceID, AL_MAX_DISTANCE, (ALfloat*)&dist);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get max distance but got: "
+		      + Convert::ToString(error));
+    }
+    return dist;
+};
+
+void OpenALSoundSystem::OpenALSound::SetLooping(bool loop) {
+    ALCenum error;
+    alSourcei(sourceID, AL_LOOPING, (ALboolean)loop);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to set looping but got: "
+		      + Convert::ToString(error));
+    }
+}
+
+bool OpenALSoundSystem::OpenALSound::GetLooping() {
+    ALint loop;
+    ALCenum error;
+    alGetSourcei(sourceID, AL_LOOPING, &loop);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get looping but got: "
+		      + Convert::ToString(error));
+    }
+    return (loop != AL_FALSE);
+}
+
+void OpenALSoundSystem::OpenALSound::SetMinGain(float gain) {
+    ALCenum error;
+    alSourcef(sourceID, AL_MIN_GAIN, (ALfloat)gain);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to set min gain but got: "
+		      + Convert::ToString(error));
+    }
+}
+
+float OpenALSoundSystem::OpenALSound::GetMinGain() {
+    ALfloat gain;
+    ALCenum error;
+    alGetSourcef(sourceID, AL_MIN_GAIN, &gain);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get min gain but got: "
+		      + Convert::ToString(error));
+    }
+    return gain;
+}
+
+void OpenALSoundSystem::OpenALSound::SetMaxGain(float gain) {
+    ALCenum error;
+    alSourcef(sourceID, AL_MAX_GAIN, (ALfloat)gain);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to set max gain but got: "
+		      + Convert::ToString(error));
+    }
+}
+
+float OpenALSoundSystem::OpenALSound::GetMaxGain() {
+    ALfloat gain;
+    ALCenum error;
+    alGetSourcef(sourceID, AL_MAX_GAIN, &gain);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get max gain but got: "
+		      + Convert::ToString(error));
+    }
+    return gain;
+}
+
+void OpenALSoundSystem::OpenALSound::SetPitch(float pitch) {
+    ALCenum error;
+    alSourcef(sourceID, AL_PITCH, (ALfloat)pitch);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to set pitch but got: "
+		      + Convert::ToString(error));
+    }
+}
+
+float OpenALSoundSystem::OpenALSound::GetPitch() {
+    ALfloat pitch;
+    ALCenum error;
+    alGetSourcef(sourceID, AL_PITCH, &pitch);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get pitch but got: "
+		      + Convert::ToString(error));
+    }
+    return pitch;
+}
+
+void OpenALSoundSystem::OpenALSound::SetDirection(Vector<3,float> dir) {
+    ALCenum error;
+    alSource3f(sourceID, AL_DIRECTION, (ALfloat)dir[0],(ALfloat)dir[1],(ALfloat)dir[2]);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to set direction but got: "
+		      + Convert::ToString(error));
+    }
+}
+
+Vector<3,float> OpenALSoundSystem::OpenALSound::GetDirection() {
+    ALfloat dir[3];
+    ALCenum error;
+    alGetSourcefv(sourceID, AL_PITCH, dir);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get direction but got: "
+		      + Convert::ToString(error));
+    }
+    return Vector<3,float>(dir[0],dir[1],dir[2]);
+}
+
+void OpenALSoundSystem::OpenALSound::SetConeInnerAngle(float angle) {
+    ALCenum error;
+    alSourcef(sourceID, AL_CONE_INNER_ANGLE, (ALfloat)angle);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to set cone inner angle but got: "
+		      + Convert::ToString(error));
+    }
+}
+
+float OpenALSoundSystem::OpenALSound::GetConeInnerAngle() {
+    ALfloat angle;
+    ALCenum error;
+    alGetSourcefv(sourceID, AL_CONE_INNER_ANGLE, &angle);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get cone inner angle but got: "
+		      + Convert::ToString(error));
+    }
+    return angle;
+}
+
+void OpenALSoundSystem::OpenALSound::SetConeOuterAngle(float angle) {
+    ALCenum error;
+    alSourcef(sourceID, AL_CONE_OUTER_ANGLE, (ALfloat)angle);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to set cone outer angle but got: "
+		      + Convert::ToString(error));
+    }
+}
+
+float OpenALSoundSystem::OpenALSound::GetConeOuterAngle() {
+    ALfloat angle;
+    ALCenum error;
+    alGetSourcefv(sourceID, AL_CONE_OUTER_ANGLE, &angle);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get cone outer angle but got: "
+		      + Convert::ToString(error));
+    }
+    return angle;
+}
+
+ISound::PlaybackState OpenALSoundSystem::OpenALSound::GetPlaybackState() {
+    ALint state;
+    ALCenum error;
+    alGetSourcei(sourceID, AL_SOURCE_STATE, &state);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get playback state but got: "
+		      + Convert::ToString(error));
+    }
+    
+    switch (state) {
+    case AL_INITIAL: return INITIAL;
+    case AL_PLAYING: return PLAYING;
+    case AL_PAUSED: return PAUSED;
+    case AL_STOPPED: return STOPPED;
+    }
+}
+
+void OpenALSoundSystem::OpenALSound::SetSampleOffset(int offset) {
+    ALCenum error;
+    alSourcei(sourceID, AL_SAMPLE_OFFSET, (ALint)offset);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to set offset by sample but got: "
+		      + Convert::ToString(error));
+    }
+}
+
+int OpenALSoundSystem::OpenALSound::GetSampleOffset() {
+    ALint offset;
+    ALCenum error;
+    alGetSourcei(sourceID, AL_SAMPLE_OFFSET, &offset);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get offset by sample but got: "
+		      + Convert::ToString(error));
+    }
+    return offset;
+}
+
 
 } // NS Sound
 } // NS OpenEngine
