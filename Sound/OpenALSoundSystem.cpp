@@ -151,13 +151,13 @@ void OpenALSoundSystem::OpenALSound::Play() {
     }
 
     //alSourcef(sourceID, AL_MAX_DISTANCE, 0.001 );
-    PrintAttribute(AL_REFERENCE_DISTANCE);
-    PrintAttribute(AL_CONE_INNER_ANGLE);
-    PrintAttribute(AL_CONE_OUTER_ANGLE);
-    PrintAttribute(AL_ROLLOFF_FACTOR);
-    PrintAttribute(AL_MAX_DISTANCE);
-    PrintAttribute(AL_GAIN);
-    PrintAttribute(AL_ROLLOFF_FACTOR);
+//     PrintAttribute(AL_REFERENCE_DISTANCE);
+//     PrintAttribute(AL_CONE_INNER_ANGLE);
+//     PrintAttribute(AL_CONE_OUTER_ANGLE);
+//     PrintAttribute(AL_ROLLOFF_FACTOR);
+//     PrintAttribute(AL_MAX_DISTANCE);
+//     PrintAttribute(AL_GAIN);
+//     PrintAttribute(AL_ROLLOFF_FACTOR);
 }
 
 void OpenALSoundSystem::OpenALSound::PrintAttribute(ALenum e) {

@@ -31,7 +31,7 @@ SoundRenderer::SoundRenderer() {
 } 
 
 SoundRenderer::~SoundRenderer() {
-    //    for (list<iterator)
+    // TODO: cleanup
 }
     
 void SoundRenderer::Handle(RenderingEventArg arg) {
@@ -53,8 +53,12 @@ void SoundRenderer::Handle(RenderingEventArg arg) {
     void SoundRenderer::AddSoundNode(SoundNode* node, Vector<3,float> col) {
     TransformationNode* tn = new TransformationNode();
     MaterialPtr m = MaterialPtr(new Material());
-    m->ambient = Vector<4,float>(col[0],col[1],col[2],1.0);
-
+    m->ambient = Vector<4,float>(col[0],col[1],col[2],.5);
+    //m->shininess = 100;
+    //m->specular = Vector<4,float>(0.0,0.0,0.0,0.5);
+    m->diffuse = Vector<4,float>(.1,.1,.1,1.0);
+    //m->emission = Vector<4,float>(0.0,0.2,0.0,1.0);
+    
     SphereNode* sn = new SphereNode(m,30,30);
     tn->AddNode(sn);
     node->AddNode(tn);
