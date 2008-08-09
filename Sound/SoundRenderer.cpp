@@ -14,6 +14,7 @@
 #include <Scene/SoundNode.h>
 #include <Math/Matrix.h>
 #include <Sound/ISound.h>
+#include <Geometry/Material.h>
 
 #include <Logging/Logger.h>
 
@@ -22,6 +23,8 @@ namespace Sound {
 
 using OpenEngine::Scene::SphereNode;
 using OpenEngine::Math::Matrix;
+using OpenEngine::Geometry::Material;
+using OpenEngine::Geometry::MaterialPtr;
 
 SoundRenderer::SoundRenderer() {
     
@@ -47,9 +50,12 @@ void SoundRenderer::Handle(RenderingEventArg arg) {
     }
 }
     
-void SoundRenderer::AddSoundNode(SoundNode* node) {
+    void SoundRenderer::AddSoundNode(SoundNode* node, Vector<3,float> col) {
     TransformationNode* tn = new TransformationNode();
-    SphereNode* sn = new SphereNode();
+    MaterialPtr m = MaterialPtr(new Material());
+    m->ambient = Vector<4,float>(col[0],col[1],col[2],1.0);
+
+    SphereNode* sn = new SphereNode(m,30,30);
     tn->AddNode(sn);
     node->AddNode(tn);
 

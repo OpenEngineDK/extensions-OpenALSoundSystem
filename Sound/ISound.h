@@ -75,6 +75,12 @@ public:
     virtual void SetMaxGain(float gain) = 0;
     virtual float GetMaxGain() = 0;
 
+    virtual void SetReferenceDistance(float dist) = 0;
+    virtual float GetReferenceDistance() = 0;
+
+    virtual void SetRolloffFactor(float rolloff) = 0;
+    virtual float GetRolloffFactor() = 0;
+
     virtual void SetPitch(float pitch) = 0;
     virtual float GetPitch() = 0;
 

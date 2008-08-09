@@ -101,6 +101,12 @@ private:
         void SetMaxGain(float gain);
         float GetMaxGain();
         
+        void SetReferenceDistance(float dist);
+        float GetReferenceDistance();
+
+        void SetRolloffFactor(float rolloff);
+        float GetRolloffFactor();
+
         void SetGain(float gain);
         float GetGain();
 

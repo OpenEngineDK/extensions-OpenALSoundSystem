@@ -13,6 +13,7 @@
 //#include <Scene/ISceneNodeVisitor.h>
 #include <Core/IListener.h>
 #include <Renderers/IRenderer.h>
+#include <Math/Vector.h>
 
 #include <list>
 #include <map>
@@ -32,6 +33,7 @@ using OpenEngine::Core::IListener;
 using OpenEngine::Renderers::RenderingEventArg;
 using OpenEngine::Scene::SoundNode;
 using OpenEngine::Scene::TransformationNode;
+using OpenEngine::Math::Vector;
 
 using namespace std;
 
@@ -46,7 +48,7 @@ public:
     
     void Handle(RenderingEventArg arg);
     
-    void AddSoundNode(SoundNode* node);
+    void AddSoundNode(SoundNode* node, Vector<3,float> col);
     void RemoveSoundNode(SoundNode* node);
 
 };

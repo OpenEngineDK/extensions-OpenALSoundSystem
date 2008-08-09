@@ -57,7 +57,9 @@ void OpenALSoundSystem::Init() {
         ALCcontext* thecontext = alcCreateContext(thedevice, NULL);
 	alcMakeContextCurrent(thecontext);
 	alListener3f(AL_POSITION, 0.0f, 0.0f, 0.0f);
-	//alDistanceModel(AL_EXPONENT_DISTANCE);
+	alDistanceModel(AL_LINEAR_DISTANCE);
+    //    alSpeedOfSound(500);
+    
 	logger.info << "OpenAL has been initialized" << logger.end;
     }
     else
@@ -84,7 +86,7 @@ void OpenALSoundSystem::Process(const float deltaTime, const float percent) {
         alListenerfv(AL_ORIENTATION, orientation);
 
         // update listener velocity
-        Vector<3,float> vel = (vvpos - prevPos) * (1/deltaTime*1000);
+        Vector<3,float> vel = (vvpos - prevPos) * (1/deltaTime*1000) * 0.0001;
         prevPos = vvpos;
         alListener3f(AL_VELOCITY, vel[0], vel[1], vel[2]);
         //logger.info << "listener vel: " << vel << logger.end;
@@ -141,7 +143,6 @@ OpenALSoundSystem::OpenALSound::~OpenALSound() {
 }
 
 void OpenALSoundSystem::OpenALSound::Play() {
-    alDistanceModel(AL_LINEAR_DISTANCE);
     alSourcePlay(sourceID);
     ALCenum error;
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -349,6 +350,48 @@ float OpenALSoundSystem::OpenALSound::GetMaxGain() {
     }
     return gain;
 }
+
+void OpenALSoundSystem::OpenALSound::SetRolloffFactor(float rolloff) {
+    ALCenum error;
+    alSourcef(sourceID, AL_ROLLOFF_FACTOR, (ALfloat)rolloff);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to set rolloff factor but got: "
+		      + Convert::ToString(error));
+    }
+}
+
+float OpenALSoundSystem::OpenALSound::GetRolloffFactor() {
+    ALfloat rolloff;
+    ALCenum error;
+    alGetSourcef(sourceID, AL_ROLLOFF_FACTOR, &rolloff);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get rolloff factor but got: "
+		      + Convert::ToString(error));
+    }
+    return rolloff;
+}
+
+
+void OpenALSoundSystem::OpenALSound::SetReferenceDistance(float dist) {
+    ALCenum error;
+    alSourcef(sourceID, AL_REFERENCE_DISTANCE, (ALfloat)dist);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to set reference distance but got: "
+		      + Convert::ToString(error));
+    }
+}
+
+float OpenALSoundSystem::OpenALSound::GetReferenceDistance() {
+    ALfloat dist;
+    ALCenum error;
+    alGetSourcef(sourceID, AL_REFERENCE_DISTANCE, &dist);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get reference distance but got: "
+		      + Convert::ToString(error));
+    }
+    return dist;
+}
+
 
 void OpenALSoundSystem::OpenALSound::SetPitch(float pitch) {
     ALCenum error;
