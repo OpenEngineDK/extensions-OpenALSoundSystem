@@ -17,11 +17,11 @@
 namespace OpenEngine {
     //forward declarations
     namespace Sound{
-        class ISound;
+        class IMonoSound;
     }
 namespace Scene {
 
-using OpenEngine::Sound::ISound;
+using OpenEngine::Sound::IMonoSound;
 
 /**
  * Sound node.
@@ -39,18 +39,18 @@ private:
         ar & boost::serialization::base_object<SceneNode>(*this);
     }
 
-    ISound* sound;
+    IMonoSound* sound;
     
 protected:
     ISceneNode* CloneSelf();
 
 public:
-    SoundNode(ISound* sound);
+    SoundNode(IMonoSound* sound);
     SoundNode(SoundNode& node);
     virtual ~SoundNode();
 
     void Accept(ISceneNodeVisitor& visitor);
-    ISound* GetSound();
+    IMonoSound* GetSound();
 };
 
 } // NS Scene

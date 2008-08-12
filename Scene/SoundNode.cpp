@@ -14,7 +14,7 @@
 namespace OpenEngine {
 namespace Scene {
 
-SoundNode::SoundNode(ISound* sound) : sound(sound) { }
+SoundNode::SoundNode(IMonoSound* sound) : sound(sound) { }
 
 /**
 * Copy constructor.
@@ -38,7 +38,7 @@ void SoundNode::Accept(ISceneNodeVisitor& v) {
   v.VisitSoundNode(this);
 }
 
-ISound* SoundNode::GetSound() {
+IMonoSound* SoundNode::GetSound() {
     return sound;
 }
     

@@ -13,7 +13,7 @@
 #include <Scene/SphereNode.h>
 #include <Scene/SoundNode.h>
 #include <Math/Matrix.h>
-#include <Sound/ISound.h>
+#include <Sound/IMonoSound.h>
 #include <Geometry/Material.h>
 
 #include <Logging/Logger.h>
@@ -39,7 +39,7 @@ void SoundRenderer::Handle(RenderingEventArg arg) {
          itr != soundlist.end();
          itr++) {
         SoundNode* sn = *itr;
-        ISound* s = sn->GetSound();
+        IMonoSound* s = sn->GetSound();
         TransformationNode* tn = soundmap[sn];
         
         float dist = s->GetMaxDistance();

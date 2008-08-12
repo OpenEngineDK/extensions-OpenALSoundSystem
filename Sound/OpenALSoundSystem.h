@@ -24,7 +24,8 @@
 #include <Core/QueuedEvent.h>
 #include <Core/IListener.h>
 #include <Scene/SoundNode.h>
-#include <Sound/ISound.h>
+#include <Sound/IMonoSound.h>
+#include <Sound/IStereoSound.h>
 #include <Resources/ISoundResource.h>
 
 #include <list>
@@ -49,10 +50,10 @@ private:
     ISceneNode* theroot;
     IViewingVolume* vv;
     Vector<3,float> prevPos;
-    
+	
     void Init();
 
-    class OpenALSound: public ISound {
+    class OpenALMonoSound: public IMonoSound {
     private:
         ALuint sourceID;
         ALuint bufferID;
@@ -63,10 +64,10 @@ private:
         void PrintAttribute(ALenum e);
         string EnumToString(ALenum e);
     public:
-        OpenALSound(ISoundResourcePtr resource);
-        ~OpenALSound();
+        OpenALMonoSound(ISoundResourcePtr resource);
+        ~OpenALMonoSound();
         void Initialize();
-        void Play();
+		void Play();
         void Stop();
         void Pause();
 
@@ -124,11 +125,30 @@ private:
         
     };
 
+	class OpenALStereoSound : public IStereoSound {
+		private:
+			IMonoSound* left;
+			IMonoSound* right;
+			ISoundResourcePtr ress;
+
+		public:
+			OpenALStereoSound(ISoundResourcePtr resource);
+			~OpenALStereoSound();
+			void Initialize();
+		    void Play();
+			void Stop();
+			void Pause();
+			IMonoSound* GetLeft();
+			IMonoSound* GetRight();
+
+	};
+
 public:
     OpenALSoundSystem(ISceneNode* root, IViewingVolume* vv);
     ~OpenALSoundSystem();
 
-    ISound* CreateSound(ISoundResourcePtr resource);
+    IMonoSound* CreateMonoSound(ISoundResourcePtr resource);
+	IStereoSound* CreateStereoSound(ISoundResourcePtr resource);
     void SetRoot(ISceneNode* node);
 
     void Initialize();

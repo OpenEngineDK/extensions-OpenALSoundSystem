@@ -21,7 +21,8 @@ namespace OpenEngine {
 namespace Sound {
 
     //forward decl
-    class ISound;
+    class IMonoSound;
+	class IStereoSound;
 
 using OpenEngine::Core::IModule;
 using OpenEngine::Resources::ISoundResourcePtr;
@@ -31,10 +32,10 @@ class ISoundSystem : public IModule {
 public:
     virtual ~ISoundSystem() {};
 
-    virtual ISound* CreateSound(ISoundResourcePtr resource) = 0;
+    virtual IMonoSound* CreateMonoSound(ISoundResourcePtr resource) = 0;
+	virtual IStereoSound* CreateStereoSound(ISoundResourcePtr resource) = 0;
     virtual void SetRoot(ISceneNode* node) = 0;
-
-    bool IsTypeOf(const std::type_info& inf) { 
+	bool IsTypeOf(const std::type_info& inf) { 
         return typeid(ISoundSystem) == inf; 
     }
 };

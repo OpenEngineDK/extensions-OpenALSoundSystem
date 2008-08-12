@@ -29,7 +29,7 @@ private:
     //the current position and rotation
     Vector<3, float> pos;
     Quaternion<float>* dir;
-    map<ISound*,Vector<3,float> > soundmap;
+    map<IMonoSound*,Vector<3,float> > soundmap;
     float deltaTime;
 
 public:

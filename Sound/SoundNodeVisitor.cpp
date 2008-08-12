@@ -1,7 +1,7 @@
 #include <Sound/SoundNodeVisitor.h>
 
 #include <Core/Exceptions.h>
-#include <Sound/ISound.h>
+#include <Sound/IMonoSound.h>
 
 namespace OpenEngine {
 namespace Sound {
@@ -40,7 +40,7 @@ void SoundNodeVisitor::VisitTransformationNode(TransformationNode* node) {
 
 void SoundNodeVisitor::VisitSoundNode(SoundNode* node) {
     //setup the source settings
-    ISound* s = node->GetSound();
+    IMonoSound* s = node->GetSound();
     Vector<3,float> prevPos = soundmap[s];
     soundmap[s] = pos;
     s->SetVelocity((pos - prevPos)* (1/(deltaTime*1000)));
