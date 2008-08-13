@@ -143,6 +143,26 @@ private:
 
 	};
 
+	class CustomSoundResource : public ISoundResource {
+		private:
+			char* data;
+			unsigned int size;
+			int frequancy;
+			SoundFormat format;
+
+		public:
+			char* GetBuffer();
+			unsigned int GetBufferSize();
+			int GetFrequency();
+			SoundFormat GetFormat();
+			void Load();
+			void Unload();
+
+			CustomSoundResource(char* newdata, unsigned int newsize, int newfreq, SoundFormat newformat);
+			~CustomSoundResource();
+
+	};
+
 public:
     OpenALSoundSystem(ISceneNode* root, IViewingVolume* vv);
     ~OpenALSoundSystem();

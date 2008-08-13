@@ -38,9 +38,9 @@ IMonoSound* OpenALSoundSystem::CreateMonoSound(ISoundResourcePtr resource) {
 }
 
 IStereoSound* OpenALSoundSystem::CreateStereoSound(ISoundResourcePtr resource) {
-/*   OpenALStereoSound* res = new OpenALStereoSound(resource);
-    res->Initialize();*/
-    return NULL;
+    OpenALStereoSound* res = new OpenALStereoSound(resource);
+    res->Initialize();
+    return res;
 }
 
 void OpenALSoundSystem::SetRoot(ISceneNode* node) {
@@ -576,22 +576,47 @@ OpenALSoundSystem::OpenALStereoSound::~OpenALStereoSound() {
 
 void OpenALSoundSystem::OpenALStereoSound::Initialize() {
 
+	SoundFormat format = ress->GetFormat();
+	
+	if (format == Resources::MONO_8BIT || format == Resources::MONO_16BIT)
+		throw Exception("tried to make a stereo source with a mono sound pointer");
+
 	char* leftbuffer = new char[ress->GetBufferSize()/2]; 
 	char* rightbuffer = new char[ress->GetBufferSize()/2]; 
 
-	char* data = ress->GetBuffer();
+	char* data = ress->GetBuffer();    	  	
 
-    for (unsigned int i=0; i < ress->GetBufferSize(); i++) 
-    { 
-      leftbuffer[i] = (*data); // left chan
-	  data++;
-      rightbuffer[i] = (*data); // right chan 
-	  data++;
-    } 
-    
-/*	left = new OpenALMonoSound(leftbuffer);
-	right = new OpenALMonoSound(rightbuffer);*/
-			
+	if (format == Resources::STEREO_8BIT) {
+		
+		for (unsigned int i=0; i < (ress->GetBufferSize())/2; i++) 
+		{ 
+			leftbuffer[i] = data[i*2]; // left chan
+			rightbuffer[i] = data[i*2+1]; // right chan 
+		} 
+
+		left = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(leftbuffer, ress->GetBufferSize()/2, ress->GetFrequency(), Resources::MONO_8BIT)));
+		left->Initialize();
+		right = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(rightbuffer, ress->GetBufferSize()/2, ress->GetFrequency(), Resources::MONO_8BIT)));
+		right->Initialize();
+	}
+	else if (format == Resources::STEREO_16BIT) {
+		
+		int j = 0;
+		for (unsigned int i=0; i < (ress->GetBufferSize()); i += 4)  
+		{ 			
+			leftbuffer[j] = data[i]; // left chan
+			leftbuffer[j+1] = data[i+1]; // left chan
+			rightbuffer[j] = data[i+2]; // right chan 
+			rightbuffer[j+1] = data[i+3]; // right chan 
+			j += 2;
+		} 
+
+		left = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(leftbuffer, ress->GetBufferSize()/2, ress->GetFrequency(), Resources::MONO_16BIT)));
+		left->Initialize();
+		right = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(rightbuffer, ress->GetBufferSize()/2, ress->GetFrequency(), Resources::MONO_16BIT)));
+		right->Initialize();
+	}
+	
 }
 
 void OpenALSoundSystem::OpenALStereoSound::Play() {
@@ -630,6 +655,41 @@ IMonoSound* OpenALSoundSystem::OpenALStereoSound::GetLeft() {
 
 IMonoSound* OpenALSoundSystem::OpenALStereoSound::GetRight() {
 	return right;
+}
+
+char* OpenALSoundSystem::CustomSoundResource::GetBuffer() {
+	return data;
+}
+
+unsigned int OpenALSoundSystem::CustomSoundResource::GetBufferSize() {
+	return size;
+}
+
+int OpenALSoundSystem::CustomSoundResource::GetFrequency() {
+	return frequancy;
+}
+
+SoundFormat OpenALSoundSystem::CustomSoundResource::GetFormat() {
+	return format;
+}
+
+OpenALSoundSystem::CustomSoundResource::CustomSoundResource(char* newdata, unsigned int newsize, int newfreq, SoundFormat newformat) {
+	data = newdata;
+	size = newsize;
+	frequancy = newfreq;
+	format = newformat;
+}
+
+OpenALSoundSystem::CustomSoundResource::~CustomSoundResource() {
+
+}
+
+void OpenALSoundSystem::CustomSoundResource::Load() {
+
+}
+
+void OpenALSoundSystem::CustomSoundResource::Unload() {
+
 }
 
 } // NS Sound
