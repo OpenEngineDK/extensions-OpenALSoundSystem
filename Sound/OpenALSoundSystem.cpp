@@ -21,7 +21,8 @@ namespace Sound {
 
 using OpenEngine::Core::Exception;
 using OpenEngine::Utils::Convert;
-
+using namespace OpenEngine::Core;
+  
 bool OpenALSoundSystem::notinitialized = true;
 
 OpenALSoundSystem::OpenALSoundSystem(ISceneNode* root, IViewingVolume* vv): 
@@ -84,7 +85,7 @@ float OpenALSoundSystem::GetMasterGain() {
    
 }
 
-void OpenALSoundSystem::Initialize() {}
+void OpenALSoundSystem::Handle(InitializeEventArg agr) {}
 
 void OpenALSoundSystem::Init() {
 
@@ -119,7 +120,9 @@ void OpenALSoundSystem::Init() {
  * @note The processing function assumes that the scene has not been
  *       replaced by null since the initialization face. 
  */
-void OpenALSoundSystem::Process(const float deltaTime, const float percent) {
+void OpenALSoundSystem::Handle(ProcessEventArg arg) {
+  const float deltaTime = 1;
+  const float percent =1;
 
 	if (notinitialized)
 		return;
@@ -151,7 +154,7 @@ void OpenALSoundSystem::Process(const float deltaTime, const float percent) {
     delete snv;
 }
 
-void OpenALSoundSystem::Deinitialize() {
+void OpenALSoundSystem::Handle(DeinitializeEventArg arg) {
 
 	if (notinitialized)
 		return;
@@ -161,10 +164,6 @@ void OpenALSoundSystem::Deinitialize() {
     alcMakeContextCurrent(NULL);
     alcDestroyContext(thecontext);
     alcCloseDevice(thedevice);
-}
-
-bool OpenALSoundSystem::IsTypeOf(const std::type_info& inf) {
-    return ((typeid(OpenALSoundSystem) == inf) || ISoundSystem::IsTypeOf(inf));
 }
 
 OpenALSoundSystem::OpenALMonoSound::OpenALMonoSound(ISoundResourcePtr resource) : resource(resource) {
