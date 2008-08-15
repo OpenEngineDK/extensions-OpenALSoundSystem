@@ -22,6 +22,8 @@ namespace Sound {
 using OpenEngine::Core::Exception;
 using OpenEngine::Utils::Convert;
 
+bool OpenALSoundSystem::notinitialized = true;
+
 OpenALSoundSystem::OpenALSoundSystem(ISceneNode* root, IViewingVolume* vv): 
     theroot(root), 
     vv(vv) {
@@ -33,13 +35,15 @@ OpenALSoundSystem::~OpenALSoundSystem() {
 
 IMonoSound* OpenALSoundSystem::CreateMonoSound(ISoundResourcePtr resource) {
     OpenALMonoSound* res = new OpenALMonoSound(resource);
-    res->Initialize();
+	if (!notinitialized)
+		res->Initialize();
     return res;
 }
 
 IStereoSound* OpenALSoundSystem::CreateStereoSound(ISoundResourcePtr resource) {
     OpenALStereoSound* res = new OpenALStereoSound(resource);
-    res->Initialize();
+	if (!notinitialized)
+		res->Initialize();
     return res;
 }
 
@@ -47,33 +51,68 @@ void OpenALSoundSystem::SetRoot(ISceneNode* node) {
     theroot = node;
 }
 
+void OpenALSoundSystem::SetMasterGain(float gain) {
+
+	if (notinitialized)
+		return;
+
+	if (gain < 0)
+		gain = 0.0;
+
+    ALCenum error;
+    alListenerf(AL_GAIN, (ALfloat)gain);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to set gain but got: "
+		      + Convert::ToString(error));
+    }
+    
+}
+
+float OpenALSoundSystem::GetMasterGain() {
+
+	if (notinitialized)
+		return 0.0;
+
+    float gain;
+    ALCenum error;
+    alGetListenerf(AL_GAIN, (ALfloat*)&gain);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get gain but got: "
+		      + Convert::ToString(error));
+    }
+    return gain;
+   
+}
+
 void OpenALSoundSystem::Initialize() {}
 
 void OpenALSoundSystem::Init() {
 
-	if (alGetString(AL_VENDOR))
+/*	if (alGetString(AL_VENDOR))
 		logger.info << "AL_VENDOR: " << alGetString(AL_VENDOR) << logger.end;
 	if (alGetString(AL_RENDERER))
 		logger.info << "AL_RENDERER: " << alGetString(AL_RENDERER) << logger.end;
 	if (alGetString(AL_VERSION))
 		logger.info << "AL_VERSION: " << alGetString(AL_VERSION) << logger.end;
 	if (alGetString(AL_EXTENSIONS))
-		logger.info << "AL_EXTENSIONS: " << alGetString(AL_EXTENSIONS) << logger.end;
+		logger.info << "AL_EXTENSIONS: " << alGetString(AL_EXTENSIONS) << logger.end;*/
 
     const ALCchar* defaultdevice = 
       alcGetString( NULL, ALC_DEFAULT_DEVICE_SPECIFIER );
-    logger.info << "default audio device: " << defaultdevice << logger.end;
+ //   logger.info << "default audio device: " << defaultdevice << logger.end;
 
     ALCdevice* thedevice = alcOpenDevice(NULL);
     if (thedevice) {
         ALCcontext* thecontext = alcCreateContext(thedevice, NULL);
 	alcMakeContextCurrent(thecontext);
 	alListener3f(AL_POSITION, 0.0f, 0.0f, 0.0f);
+	notinitialized = false;
 	//alDistanceModel(AL_EXPONENT_DISTANCE);
-	logger.info << "OpenAL has been initialized" << logger.end;
+//	logger.info << "OpenAL has been initialized" << logger.end;
     }
     else
-      throw new Exception("Could not initalize sound module");
+		notinitialized = true;
+		//throw new Exception("Could not initalize sound module");
 }
 
 /**
@@ -81,6 +120,10 @@ void OpenALSoundSystem::Init() {
  *       replaced by null since the initialization face. 
  */
 void OpenALSoundSystem::Process(const float deltaTime, const float percent) {
+
+	if (notinitialized)
+		return;
+	
     if (vv != NULL) {
         Vector<3,float> vvpos = vv->GetPosition();
         alListener3f(AL_POSITION, vvpos[0], vvpos[1], vvpos[2]);
@@ -109,6 +152,10 @@ void OpenALSoundSystem::Process(const float deltaTime, const float percent) {
 }
 
 void OpenALSoundSystem::Deinitialize() {
+
+	if (notinitialized)
+		return;
+
     ALCcontext* thecontext = alcGetCurrentContext();
     ALCdevice* thedevice = alcGetContextsDevice(thecontext);
     alcMakeContextCurrent(NULL);
@@ -124,6 +171,10 @@ OpenALSoundSystem::OpenALMonoSound::OpenALMonoSound(ISoundResourcePtr resource) 
 }
 
 void OpenALSoundSystem::OpenALMonoSound::Initialize() {
+
+	if (notinitialized)
+		return;
+
     //generate the source
     ALuint source;
     alGenSources(1, &source);
@@ -148,11 +199,19 @@ void OpenALSoundSystem::OpenALMonoSound::Initialize() {
 }
 
 OpenALSoundSystem::OpenALMonoSound::~OpenALMonoSound() {
+
+	if (notinitialized)
+		return;
+
     alDeleteBuffers(1, &bufferID);
     alDeleteSources(1, &sourceID);
 }
 
 void OpenALSoundSystem::OpenALMonoSound::Play() {
+
+	if (notinitialized)
+		return;
+
     alDistanceModel(AL_LINEAR_DISTANCE);
     alSourcePlay(sourceID);
     ALCenum error;
@@ -172,12 +231,16 @@ void OpenALSoundSystem::OpenALMonoSound::Play() {
 }
 
 void OpenALSoundSystem::OpenALMonoSound::PrintAttribute(ALenum e) {
+
+	if (notinitialized)
+		return;
+
     float* where = new float[3];
     where[0] = where[1] = where[2] = 0.0;
     alGetSourcefv(sourceID, e, where);
     Vector<3,float> vec = Vector<3,float>(where[0],where[1],where[2]);
     delete where;
-    logger.info << "" << EnumToString(e) << ": " << vec << logger.end;
+    //logger.info << "" << EnumToString(e) << ": " << vec << logger.end;
 }
 
 string OpenALSoundSystem::OpenALMonoSound::EnumToString(ALenum e) {
@@ -208,6 +271,10 @@ string OpenALSoundSystem::OpenALMonoSound::EnumToString(ALenum e) {
 }
 
 void OpenALSoundSystem::OpenALMonoSound::Stop() {
+
+	if (notinitialized)
+		return;
+
     alSourceStop(sourceID);
     ALCenum error;
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -217,6 +284,10 @@ void OpenALSoundSystem::OpenALMonoSound::Stop() {
 }
 
 void OpenALSoundSystem::OpenALMonoSound::Pause() {
+
+	if (notinitialized)
+		return;
+
     alSourcePause(sourceID);
     ALCenum error;
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -235,6 +306,10 @@ Quaternion<float> OpenALSoundSystem::OpenALMonoSound::GetRotation() {
 }
 
 void OpenALSoundSystem::OpenALMonoSound::SetPosition(Vector<3,float> pos) {
+
+	if (notinitialized)
+		return;
+
     //logger.info << "pos: " << pos << logger.end;
     alSource3f(sourceID, AL_POSITION, pos[0], pos[1], pos[2]);
 
@@ -263,6 +338,10 @@ void OpenALSoundSystem::OpenALMonoSound::SetID(unsigned int id) {
 }
 
 void OpenALSoundSystem::OpenALMonoSound::SetGain(float gain) {
+
+	if (notinitialized)
+		return;
+
     ALCenum error;
     alSourcef(sourceID, AL_GAIN, (ALfloat)gain);
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -272,6 +351,10 @@ void OpenALSoundSystem::OpenALMonoSound::SetGain(float gain) {
 }
 
 float OpenALSoundSystem::OpenALMonoSound::GetGain() {
+
+	if (notinitialized)
+		return 0.0;
+
     float gain;
     ALCenum error;
     alGetSourcef(sourceID, AL_GAIN, (ALfloat*)&gain);
@@ -283,6 +366,10 @@ float OpenALSoundSystem::OpenALMonoSound::GetGain() {
 }
 
 void OpenALSoundSystem::OpenALMonoSound::SetMaxDistance(float dist) {
+
+	if (notinitialized)
+		return;
+
     ALCenum error;
     alSourcef(sourceID, AL_MAX_DISTANCE, (ALfloat)dist);
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -292,6 +379,10 @@ void OpenALSoundSystem::OpenALMonoSound::SetMaxDistance(float dist) {
 }
 
 float OpenALSoundSystem::OpenALMonoSound::GetMaxDistance() {
+
+	if (notinitialized)
+		return 0.0;
+
     float dist;
     ALCenum error;
     alGetSourcef(sourceID, AL_MAX_DISTANCE, (ALfloat*)&dist);
@@ -303,6 +394,10 @@ float OpenALSoundSystem::OpenALMonoSound::GetMaxDistance() {
 };
 
 void OpenALSoundSystem::OpenALMonoSound::SetLooping(bool loop) {
+
+	if (notinitialized)
+		return;
+
     ALCenum error;
     alSourcei(sourceID, AL_LOOPING, (ALboolean)loop);
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -312,6 +407,10 @@ void OpenALSoundSystem::OpenALMonoSound::SetLooping(bool loop) {
 }
 
 bool OpenALSoundSystem::OpenALMonoSound::GetLooping() {
+
+	if (notinitialized)
+		return false;
+
     ALint loop;
     ALCenum error;
     alGetSourcei(sourceID, AL_LOOPING, &loop);
@@ -323,6 +422,10 @@ bool OpenALSoundSystem::OpenALMonoSound::GetLooping() {
 }
 
 void OpenALSoundSystem::OpenALMonoSound::SetMinGain(float gain) {
+
+	if (notinitialized)
+		return;
+
     ALCenum error;
     alSourcef(sourceID, AL_MIN_GAIN, (ALfloat)gain);
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -332,6 +435,10 @@ void OpenALSoundSystem::OpenALMonoSound::SetMinGain(float gain) {
 }
 
 float OpenALSoundSystem::OpenALMonoSound::GetMinGain() {
+
+	if (notinitialized)
+		return 0.0;
+
     ALfloat gain;
     ALCenum error;
     alGetSourcef(sourceID, AL_MIN_GAIN, &gain);
@@ -343,6 +450,10 @@ float OpenALSoundSystem::OpenALMonoSound::GetMinGain() {
 }
 
 void OpenALSoundSystem::OpenALMonoSound::SetMaxGain(float gain) {
+
+	if (notinitialized)
+		return;
+
     ALCenum error;
     alSourcef(sourceID, AL_MAX_GAIN, (ALfloat)gain);
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -352,6 +463,10 @@ void OpenALSoundSystem::OpenALMonoSound::SetMaxGain(float gain) {
 }
 
 float OpenALSoundSystem::OpenALMonoSound::GetMaxGain() {
+
+	if (notinitialized)
+		return 0.0;
+
     ALfloat gain;
     ALCenum error;
     alGetSourcef(sourceID, AL_MAX_GAIN, &gain);
@@ -363,6 +478,10 @@ float OpenALSoundSystem::OpenALMonoSound::GetMaxGain() {
 }
 
 void OpenALSoundSystem::OpenALMonoSound::SetRolloffFactor(float rolloff) {
+
+	if (notinitialized)
+		return;
+
     ALCenum error;
     alSourcef(sourceID, AL_ROLLOFF_FACTOR, (ALfloat)rolloff);
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -372,6 +491,10 @@ void OpenALSoundSystem::OpenALMonoSound::SetRolloffFactor(float rolloff) {
 }
 
 float OpenALSoundSystem::OpenALMonoSound::GetRolloffFactor() {
+
+	if (notinitialized)
+		return 0.0;
+
     ALfloat rolloff;
     ALCenum error;
     alGetSourcef(sourceID, AL_ROLLOFF_FACTOR, &rolloff);
@@ -384,6 +507,10 @@ float OpenALSoundSystem::OpenALMonoSound::GetRolloffFactor() {
 
 
 void OpenALSoundSystem::OpenALMonoSound::SetReferenceDistance(float dist) {
+
+	if (notinitialized)
+		return;
+
     ALCenum error;
     alSourcef(sourceID, AL_REFERENCE_DISTANCE, (ALfloat)dist);
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -393,6 +520,10 @@ void OpenALSoundSystem::OpenALMonoSound::SetReferenceDistance(float dist) {
 }
 
 float OpenALSoundSystem::OpenALMonoSound::GetReferenceDistance() {
+
+	if (notinitialized)
+		return 0.0;
+
     ALfloat dist;
     ALCenum error;
     alGetSourcef(sourceID, AL_REFERENCE_DISTANCE, &dist);
@@ -405,6 +536,10 @@ float OpenALSoundSystem::OpenALMonoSound::GetReferenceDistance() {
 
 
 void OpenALSoundSystem::OpenALMonoSound::SetPitch(float pitch) {
+
+	if (notinitialized)
+		return;
+
     ALCenum error;
     alSourcef(sourceID, AL_PITCH, (ALfloat)pitch);
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -414,6 +549,10 @@ void OpenALSoundSystem::OpenALMonoSound::SetPitch(float pitch) {
 }
 
 float OpenALSoundSystem::OpenALMonoSound::GetPitch() {
+
+	if (notinitialized)
+		return 0.0;
+
     ALfloat pitch;
     ALCenum error;
     alGetSourcef(sourceID, AL_PITCH, &pitch);
@@ -424,7 +563,11 @@ float OpenALSoundSystem::OpenALMonoSound::GetPitch() {
     return pitch;
 }
 
-void OpenALSoundSystem::OpenALMonoSound::SetDirection(Vector<3,float> dir) {
+void OpenALSoundSystem::OpenALMonoSound::SetDirection(Vector<3,float> dir) { 
+
+	if (notinitialized)
+		return;
+
     ALCenum error;
     alSource3f(sourceID, AL_DIRECTION, (ALfloat)dir[0],(ALfloat)dir[1],(ALfloat)dir[2]);
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -434,6 +577,10 @@ void OpenALSoundSystem::OpenALMonoSound::SetDirection(Vector<3,float> dir) {
 }
 
 Vector<3,float> OpenALSoundSystem::OpenALMonoSound::GetDirection() {
+
+	if (notinitialized)
+		return Vector<3,float>(0, 0, 0);
+
     ALfloat dir[3];
     ALCenum error;
     alGetSourcefv(sourceID, AL_PITCH, dir);
@@ -445,6 +592,10 @@ Vector<3,float> OpenALSoundSystem::OpenALMonoSound::GetDirection() {
 }
 
 void OpenALSoundSystem::OpenALMonoSound::SetConeInnerAngle(float angle) {
+
+	if (notinitialized)
+		return;
+
     ALCenum error;
     alSourcef(sourceID, AL_CONE_INNER_ANGLE, (ALfloat)angle);
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -454,6 +605,10 @@ void OpenALSoundSystem::OpenALMonoSound::SetConeInnerAngle(float angle) {
 }
 
 float OpenALSoundSystem::OpenALMonoSound::GetConeInnerAngle() {
+
+	if (notinitialized)
+		return 0.0;
+
     ALfloat angle;
     ALCenum error;
     alGetSourcefv(sourceID, AL_CONE_INNER_ANGLE, &angle);
@@ -465,6 +620,10 @@ float OpenALSoundSystem::OpenALMonoSound::GetConeInnerAngle() {
 }
 
 void OpenALSoundSystem::OpenALMonoSound::SetConeOuterAngle(float angle) {
+
+	if (notinitialized)
+		return;
+
     ALCenum error;
     alSourcef(sourceID, AL_CONE_OUTER_ANGLE, (ALfloat)angle);
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -474,7 +633,11 @@ void OpenALSoundSystem::OpenALMonoSound::SetConeOuterAngle(float angle) {
 }
 
 float OpenALSoundSystem::OpenALMonoSound::GetConeOuterAngle() {
-    ALfloat angle;
+
+	if (notinitialized)
+		return 0.0;	
+	
+	ALfloat angle;
     ALCenum error;
     alGetSourcefv(sourceID, AL_CONE_OUTER_ANGLE, &angle);
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -485,6 +648,10 @@ float OpenALSoundSystem::OpenALMonoSound::GetConeOuterAngle() {
 }
 
 ISound::PlaybackState OpenALSoundSystem::OpenALMonoSound::GetPlaybackState() {
+
+	if (notinitialized)
+		return INITIAL;	
+
     ALint state;
     ALCenum error;
     alGetSourcei(sourceID, AL_SOURCE_STATE, &state);
@@ -503,6 +670,10 @@ ISound::PlaybackState OpenALSoundSystem::OpenALMonoSound::GetPlaybackState() {
 }
 
 void OpenALSoundSystem::OpenALMonoSound::SetSampleOffset(int samples) {
+
+	if (notinitialized)
+		return;
+
     ALCenum error;
     alSourcei(sourceID, AL_SAMPLE_OFFSET, (ALint)samples);
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -512,6 +683,10 @@ void OpenALSoundSystem::OpenALMonoSound::SetSampleOffset(int samples) {
 }
 
 int OpenALSoundSystem::OpenALMonoSound::GetSampleOffset() {
+
+	if (notinitialized)
+		return 0;
+
     ALint samples;
     ALCenum error;
     alGetSourcei(sourceID, AL_SAMPLE_OFFSET, &samples);
@@ -523,6 +698,10 @@ int OpenALSoundSystem::OpenALMonoSound::GetSampleOffset() {
 }
 
 void OpenALSoundSystem::OpenALMonoSound::SetTimeOffset(float seconds) {
+
+	if (notinitialized)
+		return;
+
     ALCenum error;
     alSourcei(sourceID, AL_SEC_OFFSET, (ALfloat)seconds);
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -532,6 +711,10 @@ void OpenALSoundSystem::OpenALMonoSound::SetTimeOffset(float seconds) {
 }
 
 float OpenALSoundSystem::OpenALMonoSound::GetTimeOffset() {
+
+	if (notinitialized)
+		return 0.0;
+
     ALint seconds;
     ALCenum error;
     alGetSourcei(sourceID, AL_SEC_OFFSET, &seconds);
@@ -543,6 +726,10 @@ float OpenALSoundSystem::OpenALMonoSound::GetTimeOffset() {
 }
 
 void OpenALSoundSystem::OpenALMonoSound::SetVelocity(Vector<3,float> vel) {
+
+	if (notinitialized)
+		return;
+
     ALCenum error;
     ALfloat v[3];
     vel.ToArray(v);
@@ -555,6 +742,10 @@ void OpenALSoundSystem::OpenALMonoSound::SetVelocity(Vector<3,float> vel) {
 }
 
 Vector<3,float> OpenALSoundSystem::OpenALMonoSound::GetVelocity() {
+
+	if (notinitialized)
+		return Vector<3,float>(0, 0, 0);
+
     ALfloat v[3];
     ALCenum error;
     alGetSourcefv(sourceID, AL_VELOCITY, v);
@@ -621,6 +812,9 @@ void OpenALSoundSystem::OpenALStereoSound::Initialize() {
 
 void OpenALSoundSystem::OpenALStereoSound::Play() {
 
+	if (notinitialized)
+		return;
+
 	ALuint list[2];
 	list[0] = left->GetID();
 	list[1] = right->GetID();
@@ -631,6 +825,9 @@ void OpenALSoundSystem::OpenALStereoSound::Play() {
 
 void OpenALSoundSystem::OpenALStereoSound::Stop() {
 
+	if (notinitialized)
+		return;
+
 	ALuint list[2];
 	list[0] = left->GetID();
 	list[1] = right->GetID();
@@ -640,6 +837,9 @@ void OpenALSoundSystem::OpenALStereoSound::Stop() {
 }
 
 void OpenALSoundSystem::OpenALStereoSound::Pause() {
+
+	if (notinitialized)
+		return;
 
 	ALuint list[2];
 	list[0] = left->GetID();

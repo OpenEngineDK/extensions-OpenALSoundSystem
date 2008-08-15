@@ -49,8 +49,9 @@ class OpenALSoundSystem : public ISoundSystem {
 private:
     ISceneNode* theroot;
     IViewingVolume* vv;
-    Vector<3,float> prevPos;
-	
+    Vector<3,float> prevPos;	
+	static bool notinitialized;
+
     void Init();
 
     class OpenALMonoSound: public IMonoSound {
@@ -170,6 +171,8 @@ public:
     IMonoSound* CreateMonoSound(ISoundResourcePtr resource);
 	IStereoSound* CreateStereoSound(ISoundResourcePtr resource);
     void SetRoot(ISceneNode* node);
+	void SetMasterGain(float gain);
+	float GetMasterGain();
 
     void Initialize();
     void Process(const float deltaTime, const float percent);

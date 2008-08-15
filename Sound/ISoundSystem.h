@@ -35,6 +35,8 @@ public:
     virtual IMonoSound* CreateMonoSound(ISoundResourcePtr resource) = 0;
 	virtual IStereoSound* CreateStereoSound(ISoundResourcePtr resource) = 0;
     virtual void SetRoot(ISceneNode* node) = 0;
+	virtual void SetMasterGain(float gain) = 0;
+	virtual float GetMasterGain() = 0;
 	bool IsTypeOf(const std::type_info& inf) { 
         return typeid(ISoundSystem) == inf; 
     }
