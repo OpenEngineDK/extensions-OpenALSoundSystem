@@ -58,6 +58,7 @@ private:
     private:
         ALuint sourceID;
         ALuint bufferID;
+	  float length;
         Vector<3,float> pos;
         Quaternion<float> dir;
         ISoundResourcePtr resource;
@@ -71,6 +72,9 @@ private:
 		void Play();
         void Stop();
         void Pause();
+
+
+	float GetTotalLength();
 
         void SetSampleOffset(int samples);
         int GetSampleOffset();

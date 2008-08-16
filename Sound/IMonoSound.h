@@ -14,6 +14,8 @@ class IMonoSound : public ISound {
 public:
 	virtual ~IMonoSound() {}	
 
+	virtual float GetTotalLength() = 0;
+
 	virtual void SetLooping(bool loop) = 0;
     virtual bool GetLooping() = 0;
     

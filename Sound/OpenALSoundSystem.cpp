@@ -169,6 +169,12 @@ void OpenALSoundSystem::Handle(DeinitializeEventArg arg) {
 OpenALSoundSystem::OpenALMonoSound::OpenALMonoSound(ISoundResourcePtr resource) : resource(resource) {
 }
 
+  float OpenALSoundSystem::OpenALMonoSound::GetTotalLength() {
+    
+    return length;
+
+  }
+
 void OpenALSoundSystem::OpenALMonoSound::Initialize() {
 
 	if (notinitialized)
@@ -195,6 +201,23 @@ void OpenALSoundSystem::OpenALMonoSound::Initialize() {
 		      + Convert::ToString(error));
     }
     sourceID = source;
+
+    int totalsize = 0;
+    alGetBufferi(bufferID, AL_SIZE, &totalsize);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("tried to get the size of the buffer but got: "
+		      + Convert::ToString(error));
+    }
+
+    int freq = resource->GetFrequency();
+
+    SoundFormat format = resource->GetFormat();
+	
+    if (format == Resources::MONO_16BIT)
+      totalsize = totalsize/2;
+
+    length = totalsize/freq;
+
 }
 
 OpenALSoundSystem::OpenALMonoSound::~OpenALMonoSound() {
