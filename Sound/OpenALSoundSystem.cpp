@@ -144,7 +144,7 @@ void OpenALSoundSystem::Handle(ProcessEventArg arg) {
         // update listener velocity
         Vector<3,float> vel = (vvpos - prevPos) * (1/deltaTime*1000);
         prevPos = vvpos;
-        alListener3f(AL_VELOCITY, vel[0], vel[1], vel[2]);
+        // @todo: salomon alListener3f(AL_VELOCITY, vel[0], vel[1], vel[2]);
         //logger.info << "listener vel: " << vel << logger.end;
    }
 
@@ -755,7 +755,7 @@ void OpenALSoundSystem::OpenALMonoSound::SetVelocity(Vector<3,float> vel) {
     ALCenum error;
     ALfloat v[3];
     vel.ToArray(v);
-    alSourcefv(sourceID, AL_VELOCITY, v);
+    // @todo: salomon alSourcefv(sourceID, AL_VELOCITY, v);
     if ((error = alGetError()) != AL_NO_ERROR) {
       throw Exception("tried to set velocity but got: "
 		      + Convert::ToString(error));
@@ -770,7 +770,7 @@ Vector<3,float> OpenALSoundSystem::OpenALMonoSound::GetVelocity() {
 
     ALfloat v[3];
     ALCenum error;
-    alGetSourcefv(sourceID, AL_VELOCITY, v);
+    // @todo: salomon alGetSourcefv(sourceID, AL_VELOCITY, v);
     if ((error = alGetError()) != AL_NO_ERROR) {
       throw Exception("tried to get offset by time but got: "
 		      + Convert::ToString(error));
