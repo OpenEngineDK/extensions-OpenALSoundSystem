@@ -49,6 +49,9 @@ public:
     virtual void Stop() = 0;
     virtual void Pause() = 0;
 
+	virtual void SetGain(float gain) = 0;
+    virtual float GetGain() = 0;
+
 };
 
 } // NS Sound

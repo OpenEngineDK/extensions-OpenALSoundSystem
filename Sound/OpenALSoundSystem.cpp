@@ -787,6 +787,36 @@ OpenALSoundSystem::OpenALStereoSound::~OpenALStereoSound() {
 	right->~IMonoSound();
 }
 
+void OpenALSoundSystem::OpenALStereoSound::SetGain(float gain) {
+
+	if (notinitialized)
+		return;
+
+    ALCenum error;
+    alSourcef(left->GetID(), AL_GAIN, (ALfloat)gain);
+    alSourcef(right->GetID(), AL_GAIN, (ALfloat)gain);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to set gain but got: "
+		      + Convert::ToString(error));
+    }
+}
+
+float OpenALSoundSystem::OpenALStereoSound::GetGain() {
+
+	if (notinitialized)
+		return 0.0;
+
+    float gain;
+    ALCenum error;
+    alGetSourcef(left->GetID(), AL_GAIN, (ALfloat*)&gain);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get gain but got: "
+		      + Convert::ToString(error));
+    }
+    return gain;
+}
+
+
 void OpenALSoundSystem::OpenALStereoSound::Initialize() {
 
 	SoundFormat format = ress->GetFormat();

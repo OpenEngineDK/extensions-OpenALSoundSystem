@@ -49,8 +49,6 @@ public:
     virtual void SetPitch(float pitch) = 0;
     virtual float GetPitch() = 0;
 
-	virtual void SetGain(float gain) = 0;
-    virtual float GetGain() = 0;
 
     virtual void SetVelocity(Vector<3,float> vel) = 0;
     virtual Vector<3,float> GetVelocity() = 0;

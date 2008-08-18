@@ -145,6 +145,9 @@ private:
 			void Pause();
 			IMonoSound* GetLeft();
 			IMonoSound* GetRight();
+            void SetGain(float gain);
+            float GetGain();
+
 
 	};
 
