@@ -96,12 +96,12 @@ void OpenALSoundSystem::Init() {
 	if (alGetString(AL_VERSION))
 		logger.info << "AL_VERSION: " << alGetString(AL_VERSION) << logger.end;
 	if (alGetString(AL_EXTENSIONS))
-		logger.info << "AL_EXTENSIONS: " << alGetString(AL_EXTENSIONS) << logger.end;*/
+		logger.info << "AL_EXTENSIONS: " << alGetString(AL_EXTENSIONS) << logger.end;
 
     const ALCchar* defaultdevice = 
       alcGetString( NULL, ALC_DEFAULT_DEVICE_SPECIFIER );
- //   logger.info << "default audio device: " << defaultdevice << logger.end;
-
+    logger.info << "default audio device: " << defaultdevice << logger.end;
+*/
     ALCdevice* thedevice = alcOpenDevice(NULL);
     if (thedevice) {
         ALCcontext* thecontext = alcCreateContext(thedevice, NULL);
@@ -121,8 +121,7 @@ void OpenALSoundSystem::Init() {
  *       replaced by null since the initialization face. 
  */
 void OpenALSoundSystem::Handle(ProcessEventArg arg) {
-  const float deltaTime = 1;
-  const float percent =1;
+  const float deltaTime = arg.approx;
 
 	if (notinitialized)
 		return;
@@ -769,6 +768,7 @@ Vector<3,float> OpenALSoundSystem::OpenALMonoSound::GetVelocity() {
 		return Vector<3,float>(0, 0, 0);
 
     ALfloat v[3];
+    v[0] = v[1] = v[2] = 0;
     ALCenum error;
     // @todo: salomon alGetSourcefv(sourceID, AL_VELOCITY, v);
     if ((error = alGetError()) != AL_NO_ERROR) {

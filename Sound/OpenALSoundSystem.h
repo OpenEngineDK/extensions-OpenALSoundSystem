@@ -73,8 +73,7 @@ private:
         void Stop();
         void Pause();
 
-
-	float GetTotalLength();
+        float GetTotalLength();
 
         void SetSampleOffset(int samples);
         int GetSampleOffset();

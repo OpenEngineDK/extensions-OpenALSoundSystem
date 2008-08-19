@@ -22,7 +22,7 @@ SoundNode::SoundNode(IMonoSound* sound) : sound(sound) { }
 *
 * @param node Sound node to copy.
 */
-SoundNode::SoundNode(SoundNode& node) { 
+SoundNode::SoundNode(SoundNode& node) : SceneNode(node) { 
     sound = node.sound;
 }
 
