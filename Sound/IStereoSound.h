@@ -7,13 +7,11 @@ namespace OpenEngine {
 namespace Sound {
 
 class IStereoSound : public ISound {
-        
-    public:
-		~IStereoSound() {};
-        
-	    virtual IMonoSound* GetLeft() = 0;
-		virtual IMonoSound* GetRight() = 0;
-     
+public:
+    virtual ~IStereoSound() {};
+    
+    virtual IMonoSound* GetLeft() = 0;
+    virtual IMonoSound* GetRight() = 0;
 };
 
 } // NS Sound

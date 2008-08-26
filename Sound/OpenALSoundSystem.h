@@ -50,7 +50,7 @@ private:
     ISceneNode* theroot;
     IViewingVolume* vv;
     Vector<3,float> prevPos;	
-	static bool notinitialized;
+	bool initialized;
 
     void Init();
 
@@ -58,103 +58,95 @@ private:
     private:
         ALuint sourceID;
         ALuint bufferID;
-	  float length;
+//         float length;
         Vector<3,float> pos;
-        Quaternion<float> dir;
+//         Quaternion<float> dir;
         ISoundResourcePtr resource;
-        
+        OpenALSoundSystem* soundsystem;
+
         void PrintAttribute(ALenum e);
         string EnumToString(ALenum e);
     public:
-        OpenALMonoSound(ISoundResourcePtr resource);
-        ~OpenALMonoSound();
+        OpenALMonoSound(ISoundResourcePtr resource, OpenALSoundSystem* soundsystem);
+        virtual ~OpenALMonoSound();
+
+        void SetMaxDistance(float dist);
+        float GetMaxDistance();
+
+        ALuint GetID();
+
         void Initialize();
-		void Play();
+
+        bool IsPlaying();
+
+        void Play();
         void Stop();
         void Pause();
 
-        float GetTotalLength();
-
-        void SetSampleOffset(int samples);
-        int GetSampleOffset();
-        
-        void SetTimeOffset(float seconds);
-        float GetTimeOffset();
-        
-        PlaybackState GetPlaybackState();
-        
-        void SetVelocity(Vector<3,float> vel);
-        Vector<3,float> GetVelocity();
-
-        Vector<3,float> GetPosition();
-        void SetPosition(Vector<3,float> pos);
-        Quaternion<float> GetRotation();
-        void SetRotation(Quaternion<float> rotation);
-        unsigned int GetID();
-        void SetID(unsigned int);
-        ISoundResourcePtr GetResource();
-        
-        void SetMaxDistance(float dist);
-        float GetMaxDistance();
-        
         void SetLooping(bool loop);
         bool GetLooping();
         
-        void SetMinGain(float gain);
-        float GetMinGain();
-        
-        void SetMaxGain(float gain);
-        float GetMaxGain();
-        
-        void SetReferenceDistance(float dist);
-        float GetReferenceDistance();
-
-        void SetRolloffFactor(float rolloff);
-        float GetRolloffFactor();
-
         void SetGain(float gain);
         float GetGain();
 
-        void SetPitch(float pitch);
-        float GetPitch();
+        unsigned int GetLengthInSamples();
+        Time GetLength();
+
+        void SetElapsedSamples(unsigned int samples);
+        unsigned int GetElapsedSamples();
+
+        void SetElapsedTime(Time time);
+        Time GetElapsedTime();
         
-        void SetDirection(Vector<3,float> dir);
-        Vector<3,float> GetDirection();
+        void SetVelocity(Vector<3,float> vel);
+        Vector<3,float> GetVelocity();
+        Vector<3,float> GetPosition();
+        void SetPosition(Vector<3,float> pos);
         
-        void SetConeInnerAngle(float angle);
-        float GetConeInnerAngle();
-        
-        void SetConeOuterAngle(float angle);
-        float GetConeOuterAngle();
-        
+        ISoundResourcePtr GetResource();
     };
 
 	class OpenALStereoSound : public IStereoSound {
-		private:
-			IMonoSound* left;
-			IMonoSound* right;
-			ISoundResourcePtr ress;
+    private:
+        OpenALMonoSound* left;
+        OpenALMonoSound* right;
+        OpenALSoundSystem* soundsystem;
+        ISoundResourcePtr ress;
+ 
+    public:
+        OpenALStereoSound(ISoundResourcePtr resource, OpenALSoundSystem* soundsystem);
+        ~OpenALStereoSound();
+        void Initialize();
+        void Play();
+        void Stop();
+        void Pause();
 
-		public:
-			OpenALStereoSound(ISoundResourcePtr resource);
-			~OpenALStereoSound();
-			void Initialize();
-		    void Play();
-			void Stop();
-			void Pause();
-			IMonoSound* GetLeft();
-			IMonoSound* GetRight();
-            void SetGain(float gain);
-            float GetGain();
+        bool IsPlaying();
 
+        IMonoSound* GetLeft();
+        IMonoSound* GetRight();
 
-	};
+        void SetLooping(bool loop);
+        bool GetLooping();
+  
+        void SetGain(float gain);
+        float GetGain();
+
+        unsigned int GetLengthInSamples();
+        Time GetLength();
+
+        void SetElapsedSamples(unsigned int samples);
+        unsigned int GetElapsedSamples();
+
+        void SetElapsedTime(Time time);
+        Time GetElapsedTime();
+    };
 
 	class CustomSoundResource : public ISoundResource {
 		private:
 			char* data;
 			unsigned int size;
-			int frequancy;
+			int frequency;
 			SoundFormat format;
 
 		public:

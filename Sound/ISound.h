@@ -15,13 +15,16 @@
 #include <Resources/ISoundResource.h>
 
 namespace OpenEngine {
+    namespace Utils {
+        class Time;
+    }
+
 namespace Sound {
 
 using OpenEngine::Math::Vector;
 using OpenEngine::Math::Quaternion;
 using namespace OpenEngine::Resources;
-
-
+using OpenEngine::Utils::Time;
 
 /**
  * ISound.
@@ -33,17 +36,12 @@ class ISound {
 private:
 
 public:
-    enum PlaybackState {
-        INITIAL,
-        PLAYING,
-        PAUSED,
-        STOPPED
-    };
-
     virtual ~ISound() {}
 
-    virtual void Initialize() = 0;
- 
+    // query playback state 
+
+    virtual bool IsPlaying() = 0;
+
     // playback execution methods
     virtual void Play() = 0;
     virtual void Stop() = 0;
@@ -51,6 +49,18 @@ public:
 
 	virtual void SetGain(float gain) = 0;
     virtual float GetGain() = 0;
+
+	virtual void SetLooping(bool loop) = 0;
+    virtual bool GetLooping() = 0;
+    
+    virtual void SetElapsedSamples(unsigned int samples) = 0;
+    virtual unsigned int GetElapsedSamples() = 0;
+
+    virtual void SetElapsedTime(Time time) = 0;
+    virtual Time GetElapsedTime() = 0;
+
+	virtual unsigned int GetLengthInSamples() = 0;
+	virtual Time GetLength() = 0;
 
 };
 

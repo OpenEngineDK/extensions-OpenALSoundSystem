@@ -45,7 +45,7 @@ void SoundNodeVisitor::VisitSoundNode(SoundNode* node) {
     soundmap[s] = pos;
     s->SetVelocity((pos - prevPos)* (1/(deltaTime*1000)));
     s->SetPosition(pos);
-    s->SetRotation(*dir);
+    //s->SetRotation(*dir);
 
     node->VisitSubNodes(*this);
 }
