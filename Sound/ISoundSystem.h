@@ -18,11 +18,10 @@ namespace OpenEngine {
     namespace Scene {
         class ISceneNode;
     }
-namespace Sound {
+    namespace Sound {
 
-    //forward decl
-    class IMonoSound;
-	class IStereoSound;
+        //forward decl
+        class ISound;
 
 using OpenEngine::Core::IModule;
 using OpenEngine::Resources::ISoundResourcePtr;
@@ -32,8 +31,7 @@ class ISoundSystem : public IModule {
 public:
     virtual ~ISoundSystem() {};
 
-    virtual IMonoSound* CreateMonoSound(ISoundResourcePtr resource) = 0;
-	virtual IStereoSound* CreateStereoSound(ISoundResourcePtr resource) = 0;
+    virtual ISound* CreateSound(ISoundResourcePtr resource) = 0;
     virtual void SetRoot(ISceneNode* node) = 0;
 	virtual void SetMasterGain(float gain) = 0;
 	virtual float GetMasterGain() = 0;

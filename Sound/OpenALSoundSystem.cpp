@@ -15,6 +15,7 @@
 #include <Sound/SoundNodeVisitor.h>
 #include <Sound/ISound.h>
 #include <Utils/Convert.h>
+#include <Math/Math.h>
 
 namespace OpenEngine {
 namespace Sound {
@@ -22,7 +23,7 @@ namespace Sound {
 using OpenEngine::Core::Exception;
 using OpenEngine::Utils::Convert;
 using namespace OpenEngine::Core;
-  
+using namespace OpenEngine::Math;  
 
 OpenALSoundSystem::OpenALSoundSystem(ISceneNode* root, IViewingVolume* vv): 
     theroot(root), 
@@ -43,16 +44,19 @@ OpenALSoundSystem::OpenALSoundSystem(ISceneNode* root, IViewingVolume* vv):
 OpenALSoundSystem::~OpenALSoundSystem() {
 }
 
-IMonoSound* OpenALSoundSystem::CreateMonoSound(ISoundResourcePtr resource) {
-    OpenALMonoSound* sound = new OpenALMonoSound(resource, this);
-    sound->Initialize();
-    return sound;
-}
-
-IStereoSound* OpenALSoundSystem::CreateStereoSound(ISoundResourcePtr resource) {
-    OpenALStereoSound* sound = new OpenALStereoSound(resource, this);
-    sound->Initialize();
-    return sound;
+ISound* OpenALSoundSystem::CreateSound(ISoundResourcePtr resource) {
+    SoundFormat format = resource->GetFormat();
+    if (format == MONO) {
+        OpenALMonoSound* sound = new OpenALMonoSound(resource, this);
+        sound->Initialize();
+        return sound;
+    } else if (format == STEREO) {
+        OpenALStereoSound* sound = new OpenALStereoSound(resource, this);
+        sound->Initialize();
+        return sound;
+    }
+    else
+        throw Exception("unsupported sound format");
 }
 
 void OpenALSoundSystem::SetRoot(ISceneNode* node) {
@@ -177,9 +181,30 @@ void OpenALSoundSystem::OpenALMonoSound::Initialize() {
 			+ Convert::ToString(error));
     }
 
+
+    ALuint format = 0;
+    if(resource->GetFormat() == MONO) {
+        if (resource->GetBitsPerSample() == 8)
+            format = AL_FORMAT_MONO8;
+        else if (resource->GetBitsPerSample() == 16)
+            format = AL_FORMAT_MONO16;
+        else
+            throw Exception("unknown number of bits per sample");
+    }
+    else if(resource->GetFormat() == STEREO) {
+        if (resource->GetBitsPerSample() == 8)
+            format = AL_FORMAT_STEREO8;
+        else if (resource->GetBitsPerSample() == 16)
+            format = AL_FORMAT_STEREO16;
+        else
+            throw Exception("unknown number of bits per sample");
+    }
+    else
+        throw Exception("unknown sound format");
+
     //attach the buffer
     alGenBuffers(1, &bufferID);
-    alBufferData(bufferID, resource->GetFormat(), resource->GetBuffer(),
+    alBufferData(bufferID, format, resource->GetBuffer(),
 		 resource->GetBufferSize(), resource->GetFrequency());
     alSourcei(source, AL_BUFFER, bufferID);
     
@@ -189,22 +214,12 @@ void OpenALSoundSystem::OpenALMonoSound::Initialize() {
     }
     sourceID = source;
 
-//     int totalsize = 0;
-//     alGetBufferi(bufferID, AL_SIZE, &totalsize);
-//     if ((error = alGetError()) != AL_NO_ERROR) {
-//         throw Exception("tried to get the size of the buffer but got: "
-// 		      + Convert::ToString(error));
-//     }
-
-//     int freq = resource->GetFrequency();
-
-//     SoundFormat format = resource->GetFormat();
-	
-//     if (format == Resources::MONO_16BIT)
-//       totalsize = totalsize/2;
-
-//     length = totalsize/freq;
-
+    ALCenum error2;
+    alSourcei(sourceID, AL_SOURCE_RELATIVE, AL_TRUE);
+    if ((error2 = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to set source relative but got: "
+		      + Convert::ToString(error2));
+    }
 }
 
 OpenALSoundSystem::OpenALMonoSound::~OpenALMonoSound() {
@@ -226,54 +241,6 @@ void OpenALSoundSystem::OpenALMonoSound::Play() {
         throw Exception("tried to play source but got error: "
 		      + Convert::ToString(error));
     }
-
-    //alSourcef(sourceID, AL_MAX_DISTANCE, 0.001 );
-//     PrintAttribute(AL_REFERENCE_DISTANCE);
-//     PrintAttribute(AL_CONE_INNER_ANGLE);
-//     PrintAttribute(AL_CONE_OUTER_ANGLE);
-//     PrintAttribute(AL_ROLLOFF_FACTOR);
-//     PrintAttribute(AL_MAX_DISTANCE);
-//     PrintAttribute(AL_GAIN);
-//     PrintAttribute(AL_ROLLOFF_FACTOR);
-}
-
-void OpenALSoundSystem::OpenALMonoSound::PrintAttribute(ALenum e) {
-	if (!soundsystem->initialized)
-		return;
-
-    float* where = new float[3];
-    where[0] = where[1] = where[2] = 0.0;
-    alGetSourcefv(sourceID, e, where);
-    Vector<3,float> vec = Vector<3,float>(where[0],where[1],where[2]);
-    delete where;
-    //logger.info << "" << EnumToString(e) << ": " << vec << logger.end;
-}
-
-string OpenALSoundSystem::OpenALMonoSound::EnumToString(ALenum e) {
-  string str;
-  switch(e) {
-  case AL_REFERENCE_DISTANCE:
-    str = "AL_REFERENCE_DISTANCE";
-    break;
-  case AL_CONE_INNER_ANGLE:
-    str = "AL_CONE_INNER_ANGLE";
-    break;
-  case AL_CONE_OUTER_ANGLE:
-    str = "AL_CONE_OUTER_ANGLE";
-    break;
-  case AL_ROLLOFF_FACTOR:
-    str = "AL_ROLLOFF_FACTOR";
-    break;
-  case AL_MAX_DISTANCE:
-    str = "AL_MAX_DISTANCE";
-    break;
-  case AL_GAIN:
-    str = "AL_GAIN";
-    break;
-  default:
-    str = "unknown";
-  }
-  return str;
 }
 
 void OpenALSoundSystem::OpenALMonoSound::Stop() {
@@ -301,23 +268,48 @@ void OpenALSoundSystem::OpenALMonoSound::Pause() {
 }
 
 bool OpenALSoundSystem::OpenALMonoSound::IsPlaying() {
-    return true;
+	if (!soundsystem->initialized) return false;
+
+    ALint state = 0;
+    ALCenum error;
+    alGetSourcei(sourceID, AL_SOURCE_STATE, &state);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("tried to get source state but got error: "
+                        + Convert::ToString(error));
+    }
+    return (state == AL_PLAYING);
 }
 
 unsigned int OpenALSoundSystem::OpenALMonoSound::GetLengthInSamples() {
-    return 0;
+    return resource->GetNumberOfSamples();
 }
 
 
 Time OpenALSoundSystem::OpenALMonoSound::GetLength() {
-    return Time();
+    unsigned int numberOfSamples = GetLengthInSamples();
+    unsigned int freq = resource->GetFrequency();
+
+    unsigned int sampleCount = 0;
+    unsigned int sec = 0;
+    while (numberOfSamples--) {
+        sampleCount++;
+        if (sampleCount == freq) {
+            sec++;
+            sampleCount=0;
+        }
+    }
+
+    unsigned int factor = 1000000; //to get microseconds
+    unsigned int gcd = GCD(factor,freq);
+    freq /= gcd;
+    factor /= gcd;
+    return Time(sec, (sampleCount*factor)/freq); //@todo save this calc!
 }
 
 void OpenALSoundSystem::OpenALMonoSound::SetPosition(Vector<3,float> pos) {
 	if (!soundsystem->initialized)
 		return;
 
-    //logger.info << "pos: " << pos << logger.end;
     alSource3f(sourceID, AL_POSITION, pos[0], pos[1], pos[2]);
 
     ALCenum error;
@@ -339,10 +331,6 @@ ISoundResourcePtr OpenALSoundSystem::OpenALMonoSound::GetResource() {
 unsigned int OpenALSoundSystem::OpenALMonoSound::GetID() {
     return sourceID;
 }
-
-// void OpenALSoundSystem::OpenALMonoSound::SetID(unsigned int id) {
-//     sourceID = id;
-// }
 
 void OpenALSoundSystem::OpenALMonoSound::SetGain(float gain) {
 	if (!soundsystem->initialized)
@@ -439,16 +427,24 @@ Time OpenALSoundSystem::OpenALMonoSound::GetElapsedTime() {
 	if (!soundsystem->initialized)
 		return 0.0;
 
-    ALfloat seconds;
-    ALCenum error;
-    alGetSourcef(sourceID, AL_SEC_OFFSET, &seconds);
-    if ((error = alGetError()) != AL_NO_ERROR) {
-      throw Exception("tried to get offset by time but got: "
-		      + Convert::ToString(error));
+    unsigned int numberOfSamples = GetElapsedSamples();
+    unsigned int freq = resource->GetFrequency();
+
+    unsigned int sampleCount = 0;
+    unsigned int sec = 0;
+    while (numberOfSamples--) {
+        sampleCount++;
+        if (sampleCount == freq) {
+            sec++;
+            sampleCount=0;
+        }
     }
-    uint64_t sec = (int)seconds; 
-    uint32_t usec = (int)((seconds - sec)*1000000.0);
-    return Time(sec,usec);
+
+    unsigned int factor = 1000000; //to get microseconds
+    unsigned int gcd = GCD(factor,freq);
+    freq /= gcd;
+    factor /= gcd;
+    return Time(sec, (sampleCount*factor)/freq); //@todo save this calc!
 }
 
 void OpenALSoundSystem::OpenALMonoSound::SetMaxDistance(float distance) {
@@ -523,14 +519,6 @@ void OpenALSoundSystem::OpenALStereoSound::SetGain(float gain) {
 
     left->SetGain(gain);
     right->SetGain(gain);
-
-//     ALCenum error;
-//     alSourcef(left->GetID(), AL_GAIN, (ALfloat)gain);
-//     alSourcef(right->GetID(), AL_GAIN, (ALfloat)gain);
-//     if ((error = alGetError()) != AL_NO_ERROR) {
-//       throw Exception("tried to set gain but got: "
-// 		      + Convert::ToString(error));
-//     }
 }
 
 float OpenALSoundSystem::OpenALStereoSound::GetGain() {
@@ -575,9 +563,10 @@ void OpenALSoundSystem::OpenALStereoSound::SetElapsedTime(Time time) {
 }
     
 Time OpenALSoundSystem::OpenALStereoSound::GetElapsedTime() {
+//     if (left->GetElapsedTime() != right->GetElapsedTime())
+//         throw Exception("left and right channels is out of sync");
     return left->GetElapsedTime();
 }
-
   
 void OpenALSoundSystem::OpenALStereoSound::Initialize() {
 	if (!soundsystem->initialized)
@@ -585,7 +574,7 @@ void OpenALSoundSystem::OpenALStereoSound::Initialize() {
 
 	SoundFormat format = ress->GetFormat();
 	
-	if (format == Resources::MONO_8BIT || format == Resources::MONO_16BIT)
+	if (format == MONO) //@todo: maybe this should duplicate the buffer to both left and right channel
 		throw Exception("tried to make a stereo source with a mono sound pointer");
 
 	char* leftbuffer = new char[ress->GetBufferSize()/2]; 
@@ -593,7 +582,7 @@ void OpenALSoundSystem::OpenALStereoSound::Initialize() {
 
 	char* data = ress->GetBuffer();    	  	
 
-	if (format == Resources::STEREO_8BIT) {
+	if (ress->GetBitsPerSample() == 8) {
 		
 		for (unsigned int i=0; i < (ress->GetBufferSize())/2; i++) 
 		{ 
@@ -601,12 +590,12 @@ void OpenALSoundSystem::OpenALStereoSound::Initialize() {
 			rightbuffer[i] = data[i*2+1]; // right chan 
 		} 
 
-		left = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(leftbuffer, ress->GetBufferSize()/2, ress->GetFrequency(), Resources::MONO_8BIT)),soundsystem);
+		left = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(leftbuffer, ress->GetBufferSize()/2, ress->GetFrequency(), MONO, 8)),soundsystem);
 		left->Initialize();
-		right = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(rightbuffer, ress->GetBufferSize()/2, ress->GetFrequency(), Resources::MONO_8BIT)),soundsystem);
+		right = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(rightbuffer, ress->GetBufferSize()/2, ress->GetFrequency(), MONO, 8)),soundsystem);
 		right->Initialize();
 	}
-	else if (format == Resources::STEREO_16BIT) {
+	else if (ress->GetBitsPerSample() == 16) {
 		
 		int j = 0;
 		for (unsigned int i=0; i < (ress->GetBufferSize()); i += 4)  
@@ -618,9 +607,9 @@ void OpenALSoundSystem::OpenALStereoSound::Initialize() {
 			j += 2;
 		} 
 
-		left = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(leftbuffer, ress->GetBufferSize()/2, ress->GetFrequency(), Resources::MONO_16BIT)), soundsystem);
+		left = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(leftbuffer, ress->GetBufferSize()/2, ress->GetFrequency(), MONO, 16)), soundsystem);
 		left->Initialize();
-		right = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(rightbuffer, ress->GetBufferSize()/2, ress->GetFrequency(), Resources::MONO_16BIT)),soundsystem);
+		right = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(rightbuffer, ress->GetBufferSize()/2, ress->GetFrequency(), MONO, 16)),soundsystem);
 		right->Initialize();
 	}
 	
@@ -635,7 +624,6 @@ void OpenALSoundSystem::OpenALStereoSound::Play() {
 	list[1] = right->GetID();
 
 	alSourcePlayv(2, &list[0]);
-
 }
 
 void OpenALSoundSystem::OpenALStereoSound::Stop() {
@@ -663,12 +651,10 @@ void OpenALSoundSystem::OpenALStereoSound::Pause() {
 }
 
 bool OpenALSoundSystem::OpenALStereoSound::IsPlaying() {
-	if (!soundsystem->initialized)
-		return false;
-
-    return false;
+    if (left->IsPlaying() != right->IsPlaying())
+        throw Exception("left and right channel state is out of sync");
+    return left->IsPlaying();
 }
-
 
 IMonoSound* OpenALSoundSystem::OpenALStereoSound::GetLeft() {
 	return left;
@@ -686,7 +672,11 @@ unsigned int OpenALSoundSystem::CustomSoundResource::GetBufferSize() {
 	return size;
 }
 
-int OpenALSoundSystem::CustomSoundResource::GetFrequency() {
+unsigned int OpenALSoundSystem::CustomSoundResource::GetBitsPerSample() {
+	return bitsPerSample;
+}
+
+unsigned int OpenALSoundSystem::CustomSoundResource::GetFrequency() {
 	return frequency;
 }
 
@@ -694,11 +684,12 @@ SoundFormat OpenALSoundSystem::CustomSoundResource::GetFormat() {
 	return format;
 }
 
-OpenALSoundSystem::CustomSoundResource::CustomSoundResource(char* data, unsigned int size, int freq, SoundFormat format) {
+OpenALSoundSystem::CustomSoundResource::CustomSoundResource(char* data, unsigned int size, int freq, SoundFormat format, unsigned int bitsPerSample) {
 	this->data = data;
 	this->size = size;
 	this->frequency = freq;
 	this->format = format;
+    this->bitsPerSample = bitsPerSample;
 }
 
 OpenALSoundSystem::CustomSoundResource::~CustomSoundResource() {

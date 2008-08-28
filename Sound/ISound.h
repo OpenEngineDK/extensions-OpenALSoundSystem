@@ -14,11 +14,9 @@
 #include <Math/Quaternion.h>
 #include <Resources/ISoundResource.h>
 
-namespace OpenEngine {
-    namespace Utils {
-        class Time;
-    }
+#include <Utils/Timer.h>
 
+namespace OpenEngine {
 namespace Sound {
 
 using OpenEngine::Math::Vector;
@@ -62,6 +60,13 @@ public:
 	virtual unsigned int GetLengthInSamples() = 0;
 	virtual Time GetLength() = 0;
 
+    Time GetTimeLeft() {
+        return GetLength() - GetElapsedTime();
+    }
+
+    bool IsAtEnd() {
+        return (GetElapsedSamples() == GetLengthInSamples());
+    }
 };
 
 } // NS Sound

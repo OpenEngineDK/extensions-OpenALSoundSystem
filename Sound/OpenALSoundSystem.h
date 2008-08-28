@@ -58,14 +58,10 @@ private:
     private:
         ALuint sourceID;
         ALuint bufferID;
-//         float length;
         Vector<3,float> pos;
-//         Quaternion<float> dir;
         ISoundResourcePtr resource;
         OpenALSoundSystem* soundsystem;
 
-        void PrintAttribute(ALenum e);
-        string EnumToString(ALenum e);
     public:
         OpenALMonoSound(ISoundResourcePtr resource, OpenALSoundSystem* soundsystem);
         virtual ~OpenALMonoSound();
@@ -145,19 +141,19 @@ private:
 	class CustomSoundResource : public ISoundResource {
 		private:
 			char* data;
-			unsigned int size;
-			int frequency;
+			unsigned int size, frequency, bitsPerSample;
 			SoundFormat format;
 
 		public:
 			char* GetBuffer();
 			unsigned int GetBufferSize();
-			int GetFrequency();
+			unsigned int GetFrequency();
+            unsigned int GetBitsPerSample();
 			SoundFormat GetFormat();
 			void Load();
 			void Unload();
 
-			CustomSoundResource(char* newdata, unsigned int newsize, int newfreq, SoundFormat newformat);
+			CustomSoundResource(char* newdata, unsigned int newsize, int newfreq, SoundFormat newformat, unsigned int bitsPerSample);
 			~CustomSoundResource();
 
 	};
@@ -166,8 +162,7 @@ public:
     OpenALSoundSystem(ISceneNode* root, IViewingVolume* vv);
     ~OpenALSoundSystem();
 
-    IMonoSound* CreateMonoSound(ISoundResourcePtr resource);
-	IStereoSound* CreateStereoSound(ISoundResourcePtr resource);
+    ISound* CreateSound(ISoundResourcePtr resource);
     void SetRoot(ISceneNode* node);
 	void SetMasterGain(float gain);
 	float GetMasterGain();
