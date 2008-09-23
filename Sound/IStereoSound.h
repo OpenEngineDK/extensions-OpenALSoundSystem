@@ -12,6 +12,10 @@ public:
     
     virtual IMonoSound* GetLeft() = 0;
     virtual IMonoSound* GetRight() = 0;
+
+    virtual bool IsStereoSound() { return true;};
+    virtual bool IsMonoSound() { return false;};
+
 };
 
 } // NS Sound

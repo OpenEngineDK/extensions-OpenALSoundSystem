@@ -98,6 +98,7 @@ private:
         Vector<3,float> GetVelocity();
         Vector<3,float> GetPosition();
         void SetPosition(Vector<3,float> pos);
+        void SetRelativePosition(bool rel);
         
         ISoundResourcePtr GetResource();
     };

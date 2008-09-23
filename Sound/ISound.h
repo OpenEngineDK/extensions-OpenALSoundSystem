@@ -67,6 +67,12 @@ public:
     bool IsAtEnd() {
         return (GetElapsedSamples() == GetLengthInSamples());
     }
+
+
+    //
+    virtual bool IsStereoSound() = 0;
+    virtual bool IsMonoSound() = 0;
+
 };
 
 } // NS Sound

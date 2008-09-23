@@ -14,6 +14,10 @@ class IMonoSound : public ISound {
 public:
 	virtual ~IMonoSound() {}	
 
+    virtual bool IsStereoSound() { return false;};
+    virtual bool IsMonoSound() { return true;};
+
+
     virtual ISoundResourcePtr GetResource() = 0;
 
     virtual void SetPosition(Vector<3,float> pos) = 0;
@@ -22,6 +26,8 @@ public:
     virtual void SetVelocity(Vector<3,float> vel) = 0;
     virtual Vector<3,float> GetVelocity() = 0;
     
+
+    virtual void SetRelativePosition(bool rel) = 0;
 
 //     virtual unsigned int GetID() = 0;
 //     virtual void SetID(unsigned int) = 0;

@@ -37,7 +37,7 @@ OpenALSoundSystem::OpenALSoundSystem(ISceneNode* root, IViewingVolume* vv):
         alListener3f(AL_POSITION, 0.0f, 0.0f, 0.0f);
         initialized = true;
         //alDistanceModel(AL_EXPONENT_DISTANCE);
-        //	logger.info << "OpenAL has been initialized" << logger.end;
+        //logger.info << "OpenAL has been initialized" << logger.end;
     }
 }
 
@@ -213,13 +213,14 @@ void OpenALSoundSystem::OpenALMonoSound::Initialize() {
 		      + Convert::ToString(error));
     }
     sourceID = source;
-
-    ALCenum error2;
-    alSourcei(sourceID, AL_SOURCE_RELATIVE, AL_TRUE);
-    if ((error2 = alGetError()) != AL_NO_ERROR) {
-      throw Exception("tried to set source relative but got: "
-		      + Convert::ToString(error2));
+    
+    alSourcei(sourceID, AL_ROLLOFF_FACTOR, 0.5f);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("tried to set rolloff factor but got: "
+                        + Convert::ToString(error));
     }
+    
+
 }
 
 OpenALSoundSystem::OpenALMonoSound::~OpenALMonoSound() {
@@ -304,6 +305,19 @@ Time OpenALSoundSystem::OpenALMonoSound::GetLength() {
     freq /= gcd;
     factor /= gcd;
     return Time(sec, (sampleCount*factor)/freq); //@todo save this calc!
+}
+
+void OpenALSoundSystem::OpenALMonoSound::SetRelativePosition(bool rel) {
+	if (!soundsystem->initialized)
+		return;
+
+    ALCenum error;
+    alSourcei(sourceID, AL_SOURCE_RELATIVE, rel);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("tried to set source relative but got: "
+                        + Convert::ToString(error));
+    }
+
 }
 
 void OpenALSoundSystem::OpenALMonoSound::SetPosition(Vector<3,float> pos) {
