@@ -33,10 +33,10 @@ OpenALSoundSystem::OpenALSoundSystem(ISceneNode* root, IViewingVolume* vv):
     ALCdevice* thedevice = alcOpenDevice(NULL);
     if (thedevice) {
         ALCcontext* thecontext = alcCreateContext(thedevice, NULL);
-        alcMakeContextCurrent(thecontext);
+        alcMakeContextCurrent(thecontext); 
         alListener3f(AL_POSITION, 0.0f, 0.0f, 0.0f);
         initialized = true;
-        //alDistanceModel(AL_EXPONENT_DISTANCE);
+        alDistanceModel(AL_LINEAR_DISTANCE);
         //logger.info << "OpenAL has been initialized" << logger.end;
     }
 }
@@ -214,7 +214,19 @@ void OpenALSoundSystem::OpenALMonoSound::Initialize() {
     }
     sourceID = source;
     
-    alSourcei(sourceID, AL_ROLLOFF_FACTOR, 0.5f);
+    alSourcei(sourceID, AL_ROLLOFF_FACTOR, 1.0f);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("tried to set rolloff factor but got: "
+                        + Convert::ToString(error));
+    }
+
+    alSourcei(sourceID, AL_REFERENCE_DISTANCE, 50.0f);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("tried to set rolloff factor but got: "
+                        + Convert::ToString(error));
+    }
+
+    alSourcei(sourceID, AL_MAX_DISTANCE, 150.0f);
     if ((error = alGetError()) != AL_NO_ERROR) {
         throw Exception("tried to set rolloff factor but got: "
                         + Convert::ToString(error));
@@ -583,8 +595,8 @@ Time OpenALSoundSystem::OpenALStereoSound::GetElapsedTime() {
 }
   
 void OpenALSoundSystem::OpenALStereoSound::Initialize() {
-	if (!soundsystem->initialized)
-		return;
+// 	if (!soundsystem->initialized)
+// 		return;
 
 	SoundFormat format = ress->GetFormat();
 	
