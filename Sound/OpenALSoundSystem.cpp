@@ -451,7 +451,7 @@ void OpenALSoundSystem::OpenALMonoSound::SetElapsedTime(Time time) {
 
 Time OpenALSoundSystem::OpenALMonoSound::GetElapsedTime() {
 	if (!soundsystem->initialized)
-		return 0.0;
+		return Time(0,0);
 
     unsigned int numberOfSamples = GetElapsedSamples();
     unsigned int freq = resource->GetFrequency();
