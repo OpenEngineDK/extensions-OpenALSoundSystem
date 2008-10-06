@@ -61,6 +61,8 @@ private:
         Vector<3,float> pos;
         ISoundResourcePtr resource;
         OpenALSoundSystem* soundsystem;
+        Time length;
+        Time CalculateLength();
 
     public:
         OpenALMonoSound(ISoundResourcePtr resource, OpenALSoundSystem* soundsystem);

@@ -232,7 +232,7 @@ void OpenALSoundSystem::OpenALMonoSound::Initialize() {
                         + Convert::ToString(error));
     }
     
-
+    length = CalculateLength();
 }
 
 OpenALSoundSystem::OpenALMonoSound::~OpenALMonoSound() {
@@ -297,8 +297,8 @@ unsigned int OpenALSoundSystem::OpenALMonoSound::GetLengthInSamples() {
     return resource->GetNumberOfSamples();
 }
 
-
-Time OpenALSoundSystem::OpenALMonoSound::GetLength() {
+Time OpenALSoundSystem::OpenALMonoSound::CalculateLength() {
+    //@todo optimize these calculations
     unsigned int numberOfSamples = GetLengthInSamples();
     unsigned int freq = resource->GetFrequency();
 
@@ -316,7 +316,11 @@ Time OpenALSoundSystem::OpenALMonoSound::GetLength() {
     unsigned int gcd = GCD(factor,freq);
     freq /= gcd;
     factor /= gcd;
-    return Time(sec, (sampleCount*factor)/freq); //@todo save this calc!
+    return Time(sec, (sampleCount*factor)/freq);
+}
+
+Time OpenALSoundSystem::OpenALMonoSound::GetLength() {
+    return length;
 }
 
 void OpenALSoundSystem::OpenALMonoSound::SetRelativePosition(bool rel) {
