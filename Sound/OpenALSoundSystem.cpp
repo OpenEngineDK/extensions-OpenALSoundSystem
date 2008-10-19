@@ -31,9 +31,10 @@ OpenALSoundSystem::OpenALSoundSystem(ISceneNode* root, IViewingVolume* vv):
     initialized(false) {
     
     ALCdevice* thedevice = alcOpenDevice(NULL);
+    context = NULL;
     if (thedevice) {
-        ALCcontext* thecontext = alcCreateContext(thedevice, NULL);
-        alcMakeContextCurrent(thecontext); 
+        context = alcCreateContext(thedevice, NULL);
+        alcMakeContextCurrent(context); 
         alListener3f(AL_POSITION, 0.0f, 0.0f, 0.0f);
         initialized = true;
         alDistanceModel(AL_LINEAR_DISTANCE);
@@ -42,21 +43,33 @@ OpenALSoundSystem::OpenALSoundSystem(ISceneNode* root, IViewingVolume* vv):
 }
 
 OpenALSoundSystem::~OpenALSoundSystem() {
+  list<ISound*>::iterator itr = activeSounds.begin();
+  //for(; itr != activeSounds.end(); itr++)
+  //delete *itr;
+  //activeSounds.clear();
+
+  if (context!=NULL)
+    alcDestroyContext(context);
 }
 
 ISound* OpenALSoundSystem::CreateSound(ISoundResourcePtr resource) {
     SoundFormat format = resource->GetFormat();
+
+    ISound* sound = NULL;
     if (format == MONO) {
-        OpenALMonoSound* sound = new OpenALMonoSound(resource, this);
-        sound->Initialize();
-        return sound;
+        OpenALMonoSound* msound = new OpenALMonoSound(resource, this);
+	msound->Initialize();
+	sound = msound;
     } else if (format == STEREO) {
-        OpenALStereoSound* sound = new OpenALStereoSound(resource, this);
-        sound->Initialize();
-        return sound;
+        OpenALStereoSound* ssound = new OpenALStereoSound(resource, this);
+	ssound->Initialize();
+	sound = ssound;
     }
     else
         throw Exception("unsupported sound format");
+
+    //activeSounds.push_back(sound);
+    return sound;
 }
 
 void OpenALSoundSystem::SetRoot(ISceneNode* node) {

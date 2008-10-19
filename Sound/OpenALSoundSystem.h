@@ -161,6 +161,9 @@ private:
 
 	};
 
+    ALCcontext* context;
+    list<ISound*> activeSounds;
+
 public:
     OpenALSoundSystem(ISceneNode* root, IViewingVolume* vv);
     ~OpenALSoundSystem();
