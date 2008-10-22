@@ -28,7 +28,7 @@ class SoundNodeVisitor : public ISceneNodeVisitor {
 private:
     //the current position and rotation
     Vector<3, float> pos;
-    Quaternion<float>* dir;
+    Quaternion<float> dir;
     map<IMonoSound*,Vector<3,float> > soundmap;
     float deltaTime;
 

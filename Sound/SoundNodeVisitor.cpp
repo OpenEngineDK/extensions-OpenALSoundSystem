@@ -11,13 +11,9 @@ using OpenEngine::Core::Exception;
 SoundNodeVisitor::SoundNodeVisitor(float deltaTime): deltaTime(deltaTime) {
     //init to assumed startposition
     pos = Vector<3,float>(0.0, 0.0, 0.0);
-
-    //init to assumed direction
-    dir = new Quaternion<float>();
 }
 
 SoundNodeVisitor::~SoundNodeVisitor() {
-    delete(dir);
 }
 
 void SoundNodeVisitor::VisitTransformationNode(TransformationNode* node) {
@@ -27,7 +23,7 @@ void SoundNodeVisitor::VisitTransformationNode(TransformationNode* node) {
 
 	//get the change in dir from the transformation and apply to current
 	Quaternion<float> transdir = node->GetRotation();
-	(*dir) = (*dir) * transdir;
+	dir = dir * transdir;
 
 	node->VisitSubNodes(*this);
 
@@ -35,7 +31,7 @@ void SoundNodeVisitor::VisitTransformationNode(TransformationNode* node) {
 	pos = pos - transpos;
 
 	//take of turn again
-	(*dir) = (*dir) * (transdir.GetInverse());
+	dir = dir * transdir.GetInverse();
 }
 
 void SoundNodeVisitor::VisitSoundNode(SoundNode* node) {
@@ -45,7 +41,7 @@ void SoundNodeVisitor::VisitSoundNode(SoundNode* node) {
     soundmap[s] = pos;
     s->SetVelocity((pos - prevPos)* (1/(deltaTime*1000)));
     s->SetPosition(pos);
-    //s->SetRotation(*dir);
+    //s->SetRotation(dir);
 
     node->VisitSubNodes(*this);
 }
