@@ -10,12 +10,7 @@
 #ifndef _OPENENGINE_OPENAL_H_
 #define _OPENENGINE_OPENAL_H_
 
-#if (defined(_WIN32) || defined(__APPLE__))
-    #include <alc.h>
-    #include <al.h>
-#else
-    #include <AL/alc.h>
-    #include <AL/al.h>
-#endif
+#include <alc.h>
+#include <al.h>
 
 #endif // _OPENENGINE_OPENAL_H_
