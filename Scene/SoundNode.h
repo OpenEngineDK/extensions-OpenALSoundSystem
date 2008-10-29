@@ -7,21 +7,17 @@
 // See the GNU General Public License for more details (see LICENSE). 
 //--------------------------------------------------------------------
 
-#ifndef _SOUND_NODE_H_
-#define _SOUND_NODE_H_
+#ifndef _OE_SOUND_NODE_H_
+#define _OE_SOUND_NODE_H_
 
-#include <Scene/SceneNode.h>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/export.hpp>
+#include <Scene/ISceneNode.h>
 
 namespace OpenEngine {
-    //forward declarations
-    namespace Sound{
-        class IMonoSound;
-    }
-namespace Scene {
 
-using OpenEngine::Sound::IMonoSound;
+//forward declarations
+namespace Sound{ class IMonoSound; }
+
+namespace Scene {
 
 /**
  * Sound node.
@@ -29,28 +25,26 @@ using OpenEngine::Sound::IMonoSound;
  *
  * @class SoundNode SoundNode.h Scene/SoundNode.h
  */
-class SoundNode : public SceneNode {
-private:
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version)
-    {
-        // serialize base class information
-        ar & boost::serialization::base_object<SceneNode>(*this);
-    }
-
-    IMonoSound* sound;
+class SoundNode : public ISceneNode {
+    OE_SCENE_NODE(SoundNode, ISceneNode)
     
-protected:
-    ISceneNode* CloneSelf();
-
 public:
-    SoundNode(IMonoSound* sound);
-    SoundNode(SoundNode& node);
+    SoundNode(Sound::IMonoSound* sound);
+    SoundNode(const SoundNode& node);
     virtual ~SoundNode();
 
-    void Accept(ISceneNodeVisitor& visitor);
-    IMonoSound* GetSound();
+    Sound::IMonoSound* GetSound();
+
+private:
+    Sound::IMonoSound* sound;
+
+    friend class boost::serialization::access;
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version) {
+        // serialize base class information
+        ar & boost::serialization::base_object<ISceneNode>(*this);
+    }
+
 };
 
 } // NS Scene
@@ -58,5 +52,4 @@ public:
 
 BOOST_CLASS_EXPORT(OpenEngine::Scene::SoundNode)
 
-
-#endif // _SOUND_NODE_H_
+#endif // _OE_SOUND_NODE_H_

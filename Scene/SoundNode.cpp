@@ -14,28 +14,29 @@
 namespace OpenEngine {
 namespace Scene {
 
-SoundNode::SoundNode(IMonoSound* sound) : sound(sound) { }
+using OpenEngine::Sound::IMonoSound;
+
+SoundNode::SoundNode(IMonoSound* sound)
+    : ISceneNode()
+    , sound(sound)
+{
+
+}
 
 /**
-* Copy constructor.
-* Performs a shallow copy.
-*
-* @param node Sound node to copy.
-*/
-SoundNode::SoundNode(SoundNode& node) : SceneNode(node) { 
-    sound = node.sound;
+ * Copy constructor.
+ *
+ * @param node Sound node to copy.
+ */
+SoundNode::SoundNode(const SoundNode& node)
+    : ISceneNode(node)
+    , sound(node.sound)
+{ 
+
 }
 
-SoundNode::~SoundNode() {}
+SoundNode::~SoundNode() {
 
-ISceneNode* SoundNode::CloneSelf() {
-  SoundNode* clone = new SoundNode(*this);
-  return clone;
-}
-
-
-void SoundNode::Accept(ISceneNodeVisitor& v) {
-  v.VisitSoundNode(this);
 }
 
 IMonoSound* SoundNode::GetSound() {
