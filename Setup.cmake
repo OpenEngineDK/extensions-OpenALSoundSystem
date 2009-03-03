@@ -11,3 +11,7 @@ IF (NOT OPENAL_FOUND)
   MESSAGE ("WARNING: Could not find OpenAL - depending targets will be disabled.")
   SET(OE_MISSING_LIBS "${OE_MISSING_LIBS}, OpenAL")
 ENDIF (NOT OPENAL_FOUND)
+
+OE_ADD_SCENE_NODES(Extensions_OpenALSoundSystem
+  Scene/SoundNode
+)
