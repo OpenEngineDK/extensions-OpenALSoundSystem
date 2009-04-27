@@ -43,14 +43,11 @@ void SoundRenderer::Handle(RenderingEventArg arg) {
         TransformationNode* tn = soundmap[sn];
         
         float dist = s->GetMaxDistance();
-        tn->SetScale(Matrix<4,4,float>(dist,0.0,0.0,0.0,
-                                       0.0,dist,0.0,0.0,
-                                       0.0,0.0,dist,0.0,
-                                       0.0,0.0,0.0,1.0));
+        tn->SetScale(Vector<3,float>(dist));
     }
 }
     
-    void SoundRenderer::AddSoundNode(SoundNode* node, Vector<3,float> col) {
+void SoundRenderer::AddSoundNode(SoundNode* node, Vector<3,float> col) {
     TransformationNode* tn = new TransformationNode();
     MaterialPtr m = MaterialPtr(new Material());
     m->ambient = Vector<4,float>(col[0],col[1],col[2],.5);
@@ -59,7 +56,7 @@ void SoundRenderer::Handle(RenderingEventArg arg) {
     m->diffuse = Vector<4,float>(.1,.1,.1,1.0);
     //m->emission = Vector<4,float>(0.0,0.2,0.0,1.0);
     
-    SphereNode* sn = new SphereNode(m,30,30);
+    SphereNode* sn = new SphereNode(m);
     tn->AddNode(sn);
     node->AddNode(tn);
 

@@ -493,7 +493,7 @@ Time OpenALSoundSystem::OpenALMonoSound::GetElapsedTime() {
 void OpenALSoundSystem::OpenALMonoSound::SetMaxDistance(float distance) {
 	if (!soundsystem->initialized)
 		return;
-    
+
     ALCenum error;
     alSourcef(sourceID, AL_MAX_DISTANCE, (ALfloat)distance);
     if ((error = alGetError()) != AL_NO_ERROR) {
@@ -508,7 +508,7 @@ float OpenALSoundSystem::OpenALMonoSound::GetMaxDistance() {
 
     ALfloat distance;
     ALCenum error;
-    alGetSourcef(sourceID, AL_SEC_OFFSET, &distance);
+    alGetSourcef(sourceID, AL_MAX_DISTANCE, &distance);
     if ((error = alGetError()) != AL_NO_ERROR) {
       throw Exception("tried to get max distance but got: "
 		      + Convert::ToString(error));
