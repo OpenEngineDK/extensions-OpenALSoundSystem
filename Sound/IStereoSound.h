@@ -2,6 +2,7 @@
 #define _SOUND_ISTEREOSOUND_H_
 
 #include <Sound/ISound.h>
+#include <Sound/IMonoSound.h>
 
 namespace OpenEngine {
 namespace Sound {

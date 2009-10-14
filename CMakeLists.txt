@@ -8,6 +8,7 @@ ADD_LIBRARY( ${EXTENSION_NAME}
 )
 
 TARGET_LINK_LIBRARIES( ${EXTENSION_NAME}
+  OpenEngine_Math
   Extensions_VorbisResource
   ${OPENAL_LIBRARY}
 )
