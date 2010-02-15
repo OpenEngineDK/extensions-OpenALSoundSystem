@@ -16,6 +16,12 @@ namespace Scene {
 
 using OpenEngine::Sound::IMonoSound;
 
+SoundNode::SoundNode()
+    : ISceneNode()
+    , sound(NULL)
+{
+
+}
 SoundNode::SoundNode(IMonoSound* sound)
     : ISceneNode()
     , sound(sound)

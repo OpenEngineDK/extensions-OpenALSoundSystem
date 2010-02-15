@@ -29,6 +29,7 @@ class SoundNode : public ISceneNode {
     OE_SCENE_NODE(SoundNode, ISceneNode)
     
 public:
+    SoundNode();
     SoundNode(Sound::IMonoSound* sound);
     SoundNode(const SoundNode& node);
     virtual ~SoundNode();
