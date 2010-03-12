@@ -34,6 +34,10 @@ class ISound {
 private:
 
 public:
+    enum Action {
+        PLAY, STOP, PAUSE, LOOP, NO_LOOP
+    };
+
     virtual ~ISound() {}
 
     // query playback state 
@@ -60,6 +64,8 @@ public:
 	virtual unsigned int GetLengthInSamples() = 0;
 	virtual Time GetLength() = 0;
 
+    // virtual Event<ActionEventArg>& ActionEvent() = 0;
+
     Time GetTimeLeft() {
         return GetLength() - GetElapsedTime();
     }
@@ -74,6 +80,7 @@ public:
     virtual bool IsMonoSound() = 0;
 
 };
+
 
 } // NS Sound
 } // NS OpenEngine

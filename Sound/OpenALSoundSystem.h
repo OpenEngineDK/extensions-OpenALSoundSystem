@@ -26,9 +26,13 @@
 #include <Scene/SoundNode.h>
 #include <Sound/IMonoSound.h>
 #include <Sound/IStereoSound.h>
+#include <Sound/SoundNodeVisitor.h>
 #include <Resources/ISoundResource.h>
 
 #include <list>
+#include <vector>
+#include <string>
+#include <queue>
 
 namespace OpenEngine {
 namespace Sound {
@@ -44,17 +48,32 @@ using OpenEngine::Scene::SoundNode;
 using OpenEngine::Resources::ISoundResourcePtr;
 
 using std::list;
+using std::vector;
+using std::string;
+using std::queue;
 
-class OpenALSoundSystem : public ISoundSystem {
+class ALMonoEventArg;
+
+class OpenALSoundSystem : public ISoundSystem, private IListener<ALMonoEventArg> {
+    friend class ALMonoEventArg;
 private:
-    ISceneNode* theroot;
+
+    // ISceneNode* root;
     IViewingVolume* vv;
     Vector<3,float> prevPos;	
-	bool initialized;
 
-    void Init();
+    ALCdevice*  alcDevice;
+    ALCcontext* alcContext;
+    vector<string> devices;
+    unsigned int device;
 
+    SoundNodeVisitor visitor;
+
+    inline void MakeDeviceList();
+    
     class OpenALMonoSound: public IMonoSound {
+    public:
+
     private:
         ALuint sourceID;
         ALuint bufferID;
@@ -63,7 +82,8 @@ private:
         OpenALSoundSystem* soundsystem;
         Time length;
         Time CalculateLength();
-
+        Event<ALMonoEventArg> e;
+        friend class OpenALSoundSystem;
     public:
         OpenALMonoSound(ISoundResourcePtr resource, OpenALSoundSystem* soundsystem);
         virtual ~OpenALMonoSound();
@@ -72,8 +92,6 @@ private:
         float GetMaxDistance();
 
         ALuint GetID();
-
-        void Initialize();
 
         bool IsPlaying();
 
@@ -160,23 +178,41 @@ private:
 			~CustomSoundResource();
 
 	};
+    list<OpenALMonoSound*> monos;
+    map<ISoundResourcePtr, ALuint> buffers;
+    queue<ALMonoEventArg> monoActions;
 
-    ALCcontext* context;
-    list<ISound*> activeSounds;
+    void UpdatePosition(OpenALMonoSound* sound);
 
 public:
-    OpenALSoundSystem(ISceneNode* root, IViewingVolume* vv);
+    OpenALSoundSystem(/*ISceneNode* root, IViewingVolume* vv*/);
     ~OpenALSoundSystem();
 
     ISound* CreateSound(ISoundResourcePtr resource);
-    void SetRoot(ISceneNode* node);
+    // void SetRoot(ISceneNode* node);
 	void SetMasterGain(float gain);
 	float GetMasterGain();
 
-    void Handle(OpenEngine::Core::InitializeEventArg arg);
-    void Handle(OpenEngine::Core::ProcessEventArg arg);
-    void Handle(OpenEngine::Core::DeinitializeEventArg arg);
+    unsigned int GetDeviceCount();
+    string GetDeviceName(unsigned int device);
+    void SetDevice(unsigned int device);
 
+    void Handle(Core::InitializeEventArg arg);
+    void Handle(Core::ProcessEventArg arg);
+    void Handle(Core::DeinitializeEventArg arg);
+    void Handle(RenderingEventArg arg);
+
+    void Handle(ALMonoEventArg e);
+    inline void ApplyAction(ALMonoEventArg e);
+
+};
+
+class ALMonoEventArg {
+public:
+    ISound::Action action;
+    OpenALSoundSystem::OpenALMonoSound* sound;
+    ALMonoEventArg(ISound::Action action, OpenALSoundSystem::OpenALMonoSound* sound): action(action), sound(sound) {};
+    virtual ~ALMonoEventArg() {};
 };
 
 } // NS Sound

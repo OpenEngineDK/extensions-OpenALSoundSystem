@@ -13,31 +13,42 @@
 #include <Core/IModule.h>
 #include <Resources/ISoundResource.h>
 
+#include <Core/IListener.h>
+#include <Renderers/IRenderer.h>
+
+#include <string>
+
 namespace OpenEngine {
     //forward declarations
     namespace Scene {
         class ISceneNode;
     }
     namespace Sound {
-
-        //forward decl
         class ISound;
 
-using OpenEngine::Core::IModule;
-using OpenEngine::Resources::ISoundResourcePtr;
-using OpenEngine::Scene::ISceneNode;
+using Core::IModule;
+using Core::IListener;
+using Resources::ISoundResourcePtr;
+using Scene::ISceneNode;
+using Renderers::RenderingEventArg;
 
-class ISoundSystem : public IModule {
+using std::string;
+
+class ISoundSystem : public IModule, public IListener<RenderingEventArg> {
 public:
     virtual ~ISoundSystem() {};
 
     virtual ISound* CreateSound(ISoundResourcePtr resource) = 0;
-    virtual void SetRoot(ISceneNode* node) = 0;
+    //virtual void SetRoot(ISceneNode* node) = 0;
 	virtual void SetMasterGain(float gain) = 0;
 	virtual float GetMasterGain() = 0;
 	bool IsTypeOf(const std::type_info& inf) { 
         return typeid(ISoundSystem) == inf; 
     }
+    
+    virtual unsigned int GetDeviceCount() = 0;
+    virtual string GetDeviceName(unsigned int device) = 0;
+    virtual void SetDevice(unsigned int device) = 0;
 };
 
 } // NS Sound

@@ -8,41 +8,32 @@ namespace Sound {
 
 using OpenEngine::Core::Exception;
 
-SoundNodeVisitor::SoundNodeVisitor(float deltaTime): deltaTime(deltaTime) {
+SoundNodeVisitor::SoundNodeVisitor() {
     //init to assumed startposition
-    pos = Vector<3,float>(0.0, 0.0, 0.0);
+    positions.push(Vector<3,float>(0.0, 0.0, 0.0));
 }
 
 SoundNodeVisitor::~SoundNodeVisitor() {
 }
 
+void SoundNodeVisitor::SetDeltaTime(float dt) {
+    deltaTime = dt;
+}
+
 void SoundNodeVisitor::VisitTransformationNode(TransformationNode* node) {
-	//get the change in position from the transformation and apply to current
-	Vector<3, float> transpos = node->GetPosition();
-	pos = pos + transpos;
-
-	//get the change in dir from the transformation and apply to current
-	Quaternion<float> transdir = node->GetRotation();
-	dir = dir * transdir;
-
+    positions.push(positions.top() + node->GetPosition());
 	node->VisitSubNodes(*this);
-
-	//take of transformation again
-	pos = pos - transpos;
-
-	//take of turn again
-	dir = dir * transdir.GetInverse();
+    positions.pop();
 }
 
 void SoundNodeVisitor::VisitSoundNode(SoundNode* node) {
     //setup the source settings
     IMonoSound* s = node->GetSound();
-    Vector<3,float> prevPos = soundmap[s];
-    soundmap[s] = pos;
-    s->SetVelocity((pos - prevPos)* (1/(deltaTime*1000)));
-    s->SetPosition(pos);
+    // Vector<3,float> prevPos = soundmap[s];
+    // soundmap[s] = pos;
+    // s->SetVelocity((pos - prevPos)* (1/(deltaTime*1000)));
+    s->SetPosition(positions.top());
     //s->SetRotation(dir);
-
     node->VisitSubNodes(*this);
 }
 

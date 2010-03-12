@@ -17,7 +17,6 @@ public:
     virtual bool IsStereoSound() { return false;};
     virtual bool IsMonoSound() { return true;};
 
-
     virtual ISoundResourcePtr GetResource() = 0;
 
     virtual void SetPosition(Vector<3,float> pos) = 0;
@@ -29,12 +28,7 @@ public:
 
     virtual void SetRelativePosition(bool rel) = 0;
 
-//     virtual unsigned int GetID() = 0;
-//     virtual void SetID(unsigned int) = 0;
-
 // 	virtual ISound::PlaybackState GetPlaybackState() = 0;
-    
-
     
     virtual void SetMaxDistance(float dist) = 0;
     virtual float GetMaxDistance() = 0;
