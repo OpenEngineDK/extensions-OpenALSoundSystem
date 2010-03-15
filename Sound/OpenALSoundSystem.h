@@ -53,9 +53,12 @@ using std::string;
 using std::queue;
 
 class ALMonoEventArg;
+class ALStereoEventArg;
 
-class OpenALSoundSystem : public ISoundSystem, private IListener<ALMonoEventArg> {
+class OpenALSoundSystem : public ISoundSystem, private IListener<ALMonoEventArg>, 
+                          private IListener<ALStereoEventArg> {
     friend class ALMonoEventArg;
+    friend class ALStereoEventArg;
 private:
 
     // ISceneNode* root;
@@ -66,7 +69,7 @@ private:
     ALCcontext* alcContext;
     vector<string> devices;
     unsigned int device;
-
+    
     SoundNodeVisitor visitor;
 
     inline void MakeDeviceList();
@@ -77,7 +80,13 @@ private:
     private:
         ALuint sourceID;
         ALuint bufferID;
+
+        // state
+        float gain;
+        float maxdist;
+        bool rel;
         Vector<3,float> pos;
+        
         ISoundResourcePtr resource;
         OpenALSoundSystem* soundsystem;
         Time length;
@@ -90,36 +99,26 @@ private:
 
         void SetMaxDistance(float dist);
         float GetMaxDistance();
-
         ALuint GetID();
-
         bool IsPlaying();
-
         void Play();
         void Stop();
         void Pause();
-
         void SetLooping(bool loop);
         bool GetLooping();
-        
         void SetGain(float gain);
         float GetGain();
-
         unsigned int GetLengthInSamples();
         Time GetLength();
-
         void SetElapsedSamples(unsigned int samples);
         unsigned int GetElapsedSamples();
-
         void SetElapsedTime(Time time);
         Time GetElapsedTime();
-        
         void SetVelocity(Vector<3,float> vel);
         Vector<3,float> GetVelocity();
         Vector<3,float> GetPosition();
         void SetPosition(Vector<3,float> pos);
         void SetRelativePosition(bool rel);
-        
         ISoundResourcePtr GetResource();
     };
 
@@ -128,12 +127,12 @@ private:
         OpenALMonoSound* left;
         OpenALMonoSound* right;
         OpenALSoundSystem* soundsystem;
-        ISoundResourcePtr ress;
- 
-    public:
+        ISoundResourcePtr res;
+        Event<ALStereoEventArg> e;
+        friend class OpenALSoundSystem;
+     public:
         OpenALStereoSound(ISoundResourcePtr resource, OpenALSoundSystem* soundsystem);
         ~OpenALStereoSound();
-        void Initialize();
         void Play();
         void Stop();
         void Pause();
@@ -179,8 +178,10 @@ private:
 
 	};
     list<OpenALMonoSound*> monos;
+    list<OpenALStereoSound*> stereos;
     map<ISoundResourcePtr, ALuint> buffers;
     queue<ALMonoEventArg> monoActions;
+    queue<ALStereoEventArg> stereoActions;
 
     void UpdatePosition(OpenALMonoSound* sound);
 
@@ -203,8 +204,9 @@ public:
     void Handle(RenderingEventArg arg);
 
     void Handle(ALMonoEventArg e);
+    void Handle(ALStereoEventArg e);
     inline void ApplyAction(ALMonoEventArg e);
-
+    inline void ApplyAction(ALStereoEventArg e);
 };
 
 class ALMonoEventArg {
@@ -213,6 +215,14 @@ public:
     OpenALSoundSystem::OpenALMonoSound* sound;
     ALMonoEventArg(ISound::Action action, OpenALSoundSystem::OpenALMonoSound* sound): action(action), sound(sound) {};
     virtual ~ALMonoEventArg() {};
+};
+
+class ALStereoEventArg {
+public:
+    ISound::Action action;
+    OpenALSoundSystem::OpenALStereoSound* sound;
+    ALStereoEventArg(ISound::Action action, OpenALSoundSystem::OpenALStereoSound* sound): action(action), sound(sound) {};
+    virtual ~ALStereoEventArg() {};
 };
 
 } // NS Sound
