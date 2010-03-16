@@ -186,7 +186,7 @@ void OpenALSoundSystem::ApplyAction(ALStereoEventArg e) {
     list[1] = e.sound->right->GetID();
     switch (e.action) {
     case ISound::PLAY:
-        logger.info << "play sound" << logger.end;
+        // logger.info << "play sound" << logger.end;
         alSourcePlayv(2, list);
         break;
     case ISound::STOP: 
@@ -243,7 +243,7 @@ void OpenALSoundSystem::Handle(InitializeEventArg arg) {
         alBufferData(buffer, format, resource->GetBuffer(),
                      resource->GetBufferSize(), resource->GetFrequency());
          (*j).second = buffer;
-        logger.info << "buffer: " << buffer << logger.end;
+        // logger.info << "buffer: " << buffer << logger.end;
     }
     
     // init sounds
@@ -263,7 +263,7 @@ void OpenALSoundSystem::Handle(InitializeEventArg arg) {
         
         //attach the buffer
         ALuint buffer = buffers[sound->resource];
-        logger.info << "bufferbind: " << buffer << logger.end;
+        // logger.info << "bufferbind: " << buffer << logger.end;
 
         alSourcei(source, AL_BUFFER, buffer);
     
