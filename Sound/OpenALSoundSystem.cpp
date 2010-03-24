@@ -86,25 +86,30 @@ ISound* OpenALSoundSystem::CreateSound(ISoundResourcePtr resource) {
     if (format == MONO) {
         OpenALMonoSound* msound = new OpenALMonoSound(resource, this);
         sound = msound;
+        buffers[resource] = 0;
+        msound->e.Attach(*this);
         if (alcContext) {
+            InitResource(resource);
+            InitSound(msound);
         }
         else {
             monos.push_back(msound);
-            buffers[resource] = 0;
-            msound->e.Attach(*this);
         }
     } else if (format == STEREO) {
         OpenALStereoSound* ssound = new OpenALStereoSound(resource, this);
+        sound = ssound;
+        buffers[ssound->left->resource] = 0;
+        buffers[ssound->right->resource] = 0;
+        ssound->e.Attach(*this);
         if (alcContext) {
-            
+            InitResource(ssound->left->resource);
+            InitResource(ssound->right->resource);
+            InitSound(ssound->left);
+            InitSound(ssound->right);
         }
         else {	
             monos.push_back(ssound->left);
             monos.push_back(ssound->right);
-            buffers[ssound->left->resource] = 0;
-            buffers[ssound->right->resource] = 0;
-            ssound->e.Attach(*this);
-            sound = ssound;
         }
     }
     else throw Exception("unsupported sound format");
@@ -202,55 +207,38 @@ void OpenALSoundSystem::ApplyAction(ALStereoEventArg e) {
         throw Exception("Error applying sound action: " + Convert::ToString(error));
 }
 
-
-void OpenALSoundSystem::Handle(InitializeEventArg arg) {
-    alcDevice = alcOpenDevice(devices[device].c_str());
-    if (!alcDevice) {
-        logger.error << "OpenAL not initialized." << logger.end;
+void OpenALSoundSystem::InitResource(ISoundResourcePtr resource) {
+    if (buffers[resource] != 0) {
         return;
     }
-    alcContext = alcCreateContext(alcDevice, NULL);
-    alcMakeContextCurrent(alcContext); 
-    alListener3f(AL_POSITION, 0.0f, 0.0f, 0.0f);
-    alDistanceModel(AL_LINEAR_DISTANCE);
-    logger.info << "OpenAL has been initialized" << logger.end;
-
-    // init buffers
-    map<ISoundResourcePtr, ALuint>::iterator j = buffers.begin();
-    for (; j != buffers.end(); ++j) {
-        ISoundResourcePtr resource = (*j).first;
-        ALuint buffer;
-        ALuint format = 0;
-        if(resource->GetFormat() == MONO) {
-            if (resource->GetBitsPerSample() == 8)
-                format = AL_FORMAT_MONO8;
-            else if (resource->GetBitsPerSample() == 16)
-                format = AL_FORMAT_MONO16;
+    ALuint buffer;
+    ALuint format = 0;
+    if(resource->GetFormat() == MONO) {
+        if (resource->GetBitsPerSample() == 8)
+            format = AL_FORMAT_MONO8;
+        else if (resource->GetBitsPerSample() == 16)
+            format = AL_FORMAT_MONO16;
         else
             throw Exception("unknown number of bits per sample");
         }
-        else if(resource->GetFormat() == STEREO) {
-            if (resource->GetBitsPerSample() == 8)
+    else if(resource->GetFormat() == STEREO) {
+        if (resource->GetBitsPerSample() == 8)
             format = AL_FORMAT_STEREO8;
-            else if (resource->GetBitsPerSample() == 16)
-                format = AL_FORMAT_STEREO16;
-            else
-                throw Exception("Unknown number of bits per sample.");
-        }
+        else if (resource->GetBitsPerSample() == 16)
+            format = AL_FORMAT_STEREO16;
         else
-            throw Exception("Unknown sound format.");
-        alGenBuffers(1, &buffer);
-        alBufferData(buffer, format, resource->GetBuffer(),
-                     resource->GetBufferSize(), resource->GetFrequency());
-         (*j).second = buffer;
-        // logger.info << "buffer: " << buffer << logger.end;
+            throw Exception("Unknown number of bits per sample.");
     }
-    
-    // init sounds
-    list<OpenALMonoSound*>::iterator i = monos.begin();
-    for (; i != monos.end(); ++i) {
-        OpenALMonoSound* sound = (*i);
-    
+    else
+        throw Exception("Unknown sound format.");
+    alGenBuffers(1, &buffer);
+    alBufferData(buffer, format, resource->GetBuffer(),
+                 resource->GetBufferSize(), resource->GetFrequency());
+    buffers[resource] = buffer;
+    // logger.info << "buffer: " << buffer << logger.end;
+}
+
+void OpenALSoundSystem::InitSound(OpenALMonoSound* sound) {
         //generate the source
         ALuint source;
         alGenSources(1, &source);
@@ -306,6 +294,32 @@ void OpenALSoundSystem::Handle(InitializeEventArg arg) {
         }
         
         UpdatePosition(sound);
+}
+
+void OpenALSoundSystem::Handle(InitializeEventArg arg) {
+    alcDevice = alcOpenDevice(devices[device].c_str());
+    if (!alcDevice) {
+        logger.error << "OpenAL not initialized." << logger.end;
+        return;
+    }
+    alcContext = alcCreateContext(alcDevice, NULL);
+    alcMakeContextCurrent(alcContext); 
+    alListener3f(AL_POSITION, 0.0f, 0.0f, 0.0f);
+    alDistanceModel(AL_LINEAR_DISTANCE);
+    logger.info << "OpenAL has been initialized" << logger.end;
+
+    // init buffers
+    map<ISoundResourcePtr, ALuint>::iterator j = buffers.begin();
+    for (; j != buffers.end(); ++j) {
+        ISoundResourcePtr resource = (*j).first;
+        InitResource(resource);
+    }
+    
+    // init sounds
+    list<OpenALMonoSound*>::iterator i = monos.begin();
+    for (; i != monos.end(); ++i) {
+        OpenALMonoSound* sound = (*i);
+        InitSound(sound);
     }
     
     // process queued events

@@ -73,7 +73,6 @@ private:
     SoundNodeVisitor visitor;
 
     inline void MakeDeviceList();
-    
     class OpenALMonoSound: public IMonoSound {
     public:
 
@@ -183,6 +182,8 @@ private:
     queue<ALMonoEventArg> monoActions;
     queue<ALStereoEventArg> stereoActions;
 
+    inline void InitResource(ISoundResourcePtr resource);
+    inline void InitSound(OpenALMonoSound* sound);
     void UpdatePosition(OpenALMonoSound* sound);
 
 public:
