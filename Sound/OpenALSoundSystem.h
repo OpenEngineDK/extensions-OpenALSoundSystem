@@ -73,6 +73,7 @@ private:
     SoundNodeVisitor visitor;
 
     inline void MakeDeviceList();
+
     class OpenALMonoSound: public IMonoSound {
     public:
 
@@ -80,14 +81,15 @@ private:
         ALuint sourceID;
         ALuint bufferID;
 
-        // state
-        float gain;
-        float maxdist;
-        bool rel;
-        Vector<3,float> pos;
-        
         ISoundResourcePtr resource;
         OpenALSoundSystem* soundsystem;
+
+        // state
+        float maxdist;
+        float gain;
+        Vector<3,float> pos;
+        bool rel;
+        
         Time length;
         Time CalculateLength();
         Event<ALMonoEventArg> e;

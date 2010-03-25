@@ -306,7 +306,7 @@ void OpenALSoundSystem::Handle(InitializeEventArg arg) {
     alcMakeContextCurrent(alcContext); 
     alListener3f(AL_POSITION, 0.0f, 0.0f, 0.0f);
     alDistanceModel(AL_LINEAR_DISTANCE);
-    logger.info << "OpenAL has been initialized" << logger.end;
+    logger.info << "OpenAL has been initialized using device: " << devices[device] << logger.end;
 
     // init buffers
     map<ISoundResourcePtr, ALuint>::iterator j = buffers.begin();
