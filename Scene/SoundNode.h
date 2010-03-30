@@ -39,18 +39,11 @@ public:
 private:
     Sound::IMonoSound* sound;
 
-    friend class boost::serialization::access;
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int version) {
-        // serialize base class information
-        ar & boost::serialization::base_object<ISceneNode>(*this);
-    }
 
 };
 
 } // NS Scene
 } // NS OpenEngine
 
-BOOST_CLASS_EXPORT(OpenEngine::Scene::SoundNode)
 
 #endif // _OE_SOUND_NODE_H_
