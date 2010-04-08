@@ -553,24 +553,33 @@ Time OpenALSoundSystem::OpenALMonoSound::GetElapsedTime() {
 	if (!soundsystem->alcContext)
 		return Time(0,0);
 
-    unsigned int numberOfSamples = GetElapsedSamples();
-    unsigned int freq = resource->GetFrequency();
+    // unsigned int numberOfSamples = GetElapsedSamples();
+    // unsigned int freq = resource->GetFrequency();
 
-    unsigned int sampleCount = 0;
-    unsigned int sec = 0;
-    while (numberOfSamples--) {
-        sampleCount++;
-        if (sampleCount == freq) {
-            sec++;
-            sampleCount=0;
-        }
-    }
+    // unsigned int sampleCount = 0;
+    // unsigned int sec = 0;
+    // while (numberOfSamples--) {
+    //     sampleCount++;
+    //     if (sampleCount == freq) {
+    //         sec++;
+    //         sampleCount=0;
+    //     }
+    // }
 
-    unsigned int factor = 1000000; //to get microseconds
-    unsigned int gcd = GCD(factor,freq);
-    freq /= gcd;
-    factor /= gcd;
-    return Time(sec, (sampleCount*factor)/freq); //@todo save this calc!
+    // unsigned int factor = 1000000; //to get microseconds
+    // unsigned int gcd = GCD(factor,freq);
+    // freq /= gcd;
+    // factor /= gcd;
+    // return Time(sec, (sampleCount*factor)/freq); //@todo save this calc!
+    float t; 
+    alGetSourcef(sourceID, AL_SEC_OFFSET, &t);
+    // logger.info << "t: " << t << logger.end;
+    uint64_t s = t;
+    // logger.info << "s: " << s << logger.end;
+    t = t - s;
+    uint32_t us = t * 1000000;
+    // logger.info << "us: " << us << logger.end;
+    return Time(s,us);
 }
 
 void OpenALSoundSystem::OpenALMonoSound::SetMaxDistance(float distance) {
