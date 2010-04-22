@@ -14,7 +14,6 @@
 #include <Sound/ISound.h>
 #include <Utils/Convert.h>
 #include <Math/Math.h>
-#include <Display/Viewport.h>
 #include <Display/IViewingVolume.h>
 
 namespace OpenEngine {
@@ -296,7 +295,7 @@ void OpenALSoundSystem::InitSound(OpenALMonoSound* sound) {
         UpdatePosition(sound);
 }
 
-void OpenALSoundSystem::Handle(InitializeEventArg arg) {
+void OpenALSoundSystem::Handle(Core::InitializeEventArg arg) {
     alcDevice = alcOpenDevice(devices[device].c_str());
     if (!alcDevice) {
         logger.error << "OpenAL not initialized." << logger.end;
@@ -339,7 +338,7 @@ void OpenALSoundSystem::Handle(RenderingEventArg arg) {
     
     const float deltaTime = arg.approx;
 
-    IViewingVolume* vv = arg.renderer.GetViewport().GetViewingVolume();
+    IViewingVolume* vv = arg.canvas.GetViewingVolume();
 	
     Vector<3,float> vvpos = vv->GetPosition();
     alListener3f(AL_POSITION, vvpos[0], vvpos[1], vvpos[2]);
@@ -354,13 +353,13 @@ void OpenALSoundSystem::Handle(RenderingEventArg arg) {
     alListenerfv(AL_ORIENTATION, orientation);
     
     visitor.SetDeltaTime(deltaTime);
-    arg.renderer.GetSceneRoot()->Accept(visitor);
+    arg.canvas.GetScene()->Accept(visitor);
 }
 
-void OpenALSoundSystem::Handle(ProcessEventArg arg) {
+void OpenALSoundSystem::Handle(Core::ProcessEventArg arg) {
 }
 
-void OpenALSoundSystem::Handle(DeinitializeEventArg arg) {
+void OpenALSoundSystem::Handle(Core::DeinitializeEventArg arg) {
     alcMakeContextCurrent(NULL);
     if (alcContext != NULL) {
         alcDestroyContext(alcContext);
