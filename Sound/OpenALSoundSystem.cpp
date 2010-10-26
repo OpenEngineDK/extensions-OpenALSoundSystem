@@ -19,6 +19,8 @@
 namespace OpenEngine {
 namespace Sound {
 
+#define DEBUG_ME() logger.info << this << " " << __PRETTY_FUNCTION__ << logger.end
+
 using OpenEngine::Core::Exception;
 using OpenEngine::Utils::Convert;
 using namespace OpenEngine::Core;
@@ -66,6 +68,17 @@ void OpenALSoundSystem::UpdatePosition(OpenALMonoSound* sound) {
 		      + Convert::ToString(error));
     }
 }
+void OpenALSoundSystem::UpdatePosition(OpenALStreamingSound* sound) {
+    if (!alcContext) return;
+    float pos[3];
+    sound->pos.ToArray(pos);
+    alSourcefv(sound->sourceID, AL_POSITION, pos);
+    ALCenum error;
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("Error updating sound position: "
+		      + Convert::ToString(error));
+    }
+}
 
 unsigned int OpenALSoundSystem::GetDeviceCount() {
     return devices.size();
@@ -79,6 +92,24 @@ void OpenALSoundSystem::SetDevice(unsigned int device) {
     this->device = device;
 }
 
+ISound *OpenALSoundSystem::CreateSound(IStreamingSoundResourcePtr resource) {
+    
+    OpenALStreamingSound* ssound = new OpenALStreamingSound(resource, this);
+
+    bufferList[resource] = vector<ALuint>();
+    ssound->e.Attach(*this);
+    
+    if (alcContext) {
+        InitResource(resource);
+        InitSound(ssound);
+    } else {
+        streams.push_back(ssound);
+    }
+
+    return ssound;
+    
+    
+}
 ISound* OpenALSoundSystem::CreateSound(ISoundResourcePtr resource) {
     SoundFormat format = resource->GetFormat();
     ISound* sound = NULL;
@@ -140,6 +171,45 @@ float OpenALSoundSystem::GetMasterGain() {
     }
     return gain;
 }
+
+void OpenALSoundSystem::Handle(ALStreamEventArg e) {
+    if (!alcContext) {
+        streamActions.push(e);
+        return;
+    } 
+    ApplyAction(e);
+}
+void OpenALSoundSystem::ApplyAction(ALStreamEventArg e) {
+    ALCenum error;
+    string errstr;
+    ALuint sourceID = e.sound->sourceID;
+    
+    //DEBUG_ME();
+    //logger.info << "action " << e.action << logger.end;
+    
+    switch (e.action) {
+    case ISound::PLAY: 
+        alSourcePlay(sourceID);
+        playingStreams.insert(e.sound);
+        break;
+    case ISound::STOP: 
+        alSourceStop(sourceID);        
+        playingStreams.erase(e.sound);
+        break;
+    case ISound::PAUSE:
+        alSourcePause(sourceID);
+        break;
+    case ISound::LOOP:
+        alSourcei(sourceID, AL_LOOPING, (ALboolean)true);
+        break;
+    case ISound::NO_LOOP:
+        alSourcei(sourceID, AL_LOOPING, (ALboolean)false);
+        break;
+    }
+    if ((error = alGetError()) != AL_NO_ERROR)
+        throw Exception("Error applying sound action: " + Convert::ToString(error));
+}
+
 
 void OpenALSoundSystem::Handle(ALMonoEventArg e) {
     if (!alcContext) {
@@ -206,6 +276,47 @@ void OpenALSoundSystem::ApplyAction(ALStereoEventArg e) {
         throw Exception("Error applying sound action: " + Convert::ToString(error));
 }
 
+void OpenALSoundSystem::InitResource(IStreamingSoundResourcePtr resource) {
+    if (bufferList[resource].size() != 0) {
+        return;
+    }
+
+    ALuint format = 0;
+    if(resource->GetFormat() == MONO) {
+        if (resource->GetBitsPerSample() == 8)
+            format = AL_FORMAT_MONO8;
+        else if (resource->GetBitsPerSample() == 16)
+            format = AL_FORMAT_MONO16;
+        else
+            throw Exception("unknown number of bits per sample");
+        }
+    else if(resource->GetFormat() == STEREO) {
+        if (resource->GetBitsPerSample() == 8)
+            format = AL_FORMAT_STEREO8;
+        else if (resource->GetBitsPerSample() == 16)
+            format = AL_FORMAT_STEREO16;
+        else
+            throw Exception("Unknown number of bits per sample.");
+    }
+    else
+        throw Exception("Unknown sound format.");
+
+    
+    ALuint buffer[2];
+    alGenBuffers(2, buffer);
+
+    unsigned int bsize = 200*1024;
+
+    char buf[bsize];
+    
+    for (int i=0;i<2;i++) {
+        bufferList[resource].push_back(buffer[i]);
+        unsigned int read = resource->GetBuffer(bsize, buf);
+        
+        alBufferData(buffer[i], format, buf, read, resource->GetFrequency());
+
+    }
+}
 void OpenALSoundSystem::InitResource(ISoundResourcePtr resource) {
     if (buffers[resource] != 0) {
         return;
@@ -237,62 +348,115 @@ void OpenALSoundSystem::InitResource(ISoundResourcePtr resource) {
     // logger.info << "buffer: " << buffer << logger.end;
 }
 
-void OpenALSoundSystem::InitSound(OpenALMonoSound* sound) {
-        //generate the source
-        ALuint source;
-        alGenSources(1, &source);
+void OpenALSoundSystem::InitSound(OpenALStreamingSound* sound) {
+    ALuint source;
+    alGenSources(1, &source);
 
-        ALCenum error;
-        if ((error = alGetError()) != AL_NO_ERROR) {
-            throw Exception("Error generating source: "
-                            + Convert::ToString(error));
-        }
-        
-        //attach the buffer
-        ALuint buffer = buffers[sound->resource];
-        // logger.info << "bufferbind: " << buffer << logger.end;
-
-        alSourcei(source, AL_BUFFER, buffer);
+    ALCenum error;
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("Error generating source: "
+                        + Convert::ToString(error));
+    }
     
-        if ((error = alGetError()) != AL_NO_ERROR) {
-            throw Exception("Error binding buffer: "
-                            + Convert::ToString(error));
-        }
-        sound->sourceID = source;
-        sound->bufferID = buffer;
-        sound->length = sound->CalculateLength();
-        
-        // set sound attributes (ugly stuff)...
-        alSourcei(source, AL_ROLLOFF_FACTOR, 1.0f);
-        if ((error = alGetError()) != AL_NO_ERROR) {
-            throw Exception("tried to set rolloff factor but got: "
-                            + Convert::ToString(error));
-        }
-        
-        alSourcei(source, AL_REFERENCE_DISTANCE, 50.0f);
-        if ((error = alGetError()) != AL_NO_ERROR) {
-            throw Exception("tried to set rolloff factor but got: "
-                            + Convert::ToString(error));
-        }
-        
-        alSourcei(source, AL_MAX_DISTANCE, sound->maxdist);
-        if ((error = alGetError()) != AL_NO_ERROR) {
-            throw Exception("tried to set rolloff factor but got: "
-                            + Convert::ToString(error));
-        }
-        alSourcef(source, AL_GAIN, sound->gain);
-        if ((error = alGetError()) != AL_NO_ERROR) {
-            throw Exception("tried to set gain but got: "
-                            + Convert::ToString(error));
-        }
+    ALuint _buffers[2];
+    for (int i=0;i<2;i++) {
+        _buffers[i] = (bufferList[sound->resource]).at(i);
+    }
 
-        alSourcei(source, AL_SOURCE_RELATIVE, sound->rel);
-        if ((error = alGetError()) != AL_NO_ERROR) {
-            throw Exception("tried to set source relative but got: "
-                            + Convert::ToString(error));
-        }
+    alSourceQueueBuffers(source, 2, _buffers);
+    sound->sourceID = source;
+    sound->bufferIDs = bufferList[sound->resource];
+    sound->length = sound->CalculateLength();
+
+
+    // set sound attributes (ugly stuff)...
+    alSourcei(source, AL_ROLLOFF_FACTOR, 1.0f);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("tried to set rolloff factor but got: "
+                        + Convert::ToString(error));
+    }
         
-        UpdatePosition(sound);
+    alSourcei(source, AL_REFERENCE_DISTANCE, 50.0f);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("tried to set rolloff factor but got: "
+                        + Convert::ToString(error));
+    }
+        
+    alSourcei(source, AL_MAX_DISTANCE, sound->maxdist);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("tried to set rolloff factor but got: "
+                        + Convert::ToString(error));
+    }
+    alSourcef(source, AL_GAIN, sound->gain);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("tried to set gain but got: "
+                        + Convert::ToString(error));
+    }
+
+    alSourcei(source, AL_SOURCE_RELATIVE, sound->rel);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("tried to set source relative but got: "
+                        + Convert::ToString(error));
+    }
+        
+    UpdatePosition(sound);
+}
+void OpenALSoundSystem::InitSound(OpenALMonoSound* sound) {
+    //generate the source
+    ALuint source;
+    alGenSources(1, &source);
+
+    ALCenum error;
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("Error generating source: "
+                        + Convert::ToString(error));
+    }
+        
+    //attach the buffer
+    ALuint buffer = buffers[sound->resource];
+    // logger.info << "bufferbind: " << buffer << logger.end;
+
+    alSourcei(source, AL_BUFFER, buffer);
+    
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("Error binding buffer: "
+                        + Convert::ToString(error));
+    }
+    sound->sourceID = source;
+    sound->bufferID = buffer;
+    sound->length = sound->CalculateLength();
+        
+    // set sound attributes (ugly stuff)...
+    alSourcei(source, AL_ROLLOFF_FACTOR, 1.0f);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("tried to set rolloff factor but got: "
+                        + Convert::ToString(error));
+    }
+        
+    alSourcei(source, AL_REFERENCE_DISTANCE, 50.0f);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("tried to set rolloff factor but got: "
+                        + Convert::ToString(error));
+    }
+        
+    alSourcei(source, AL_MAX_DISTANCE, sound->maxdist);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("tried to set rolloff factor but got: "
+                        + Convert::ToString(error));
+    }
+    alSourcef(source, AL_GAIN, sound->gain);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("tried to set gain but got: "
+                        + Convert::ToString(error));
+    }
+
+    alSourcei(source, AL_SOURCE_RELATIVE, sound->rel);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("tried to set source relative but got: "
+                        + Convert::ToString(error));
+    }
+        
+    UpdatePosition(sound);
 }
 
 void OpenALSoundSystem::Handle(Core::InitializeEventArg arg) {
@@ -314,10 +478,24 @@ void OpenALSoundSystem::Handle(Core::InitializeEventArg arg) {
         InitResource(resource);
     }
     
+    // init streaming buffers
+    map<IStreamingSoundResourcePtr, vector<ALuint> >::iterator k = bufferList.begin();
+    for (; k != bufferList.end(); ++k) {
+        IStreamingSoundResourcePtr resource = (*k).first;
+        InitResource(resource);
+    }
+
     // init sounds
     list<OpenALMonoSound*>::iterator i = monos.begin();
     for (; i != monos.end(); ++i) {
         OpenALMonoSound* sound = (*i);
+        InitSound(sound);
+    }
+
+    // init streaming sounds
+    list<OpenALStreamingSound*>::iterator l = streams.begin();
+    for(; l != streams.end(); ++l) {
+        OpenALStreamingSound* sound = (*l);
         InitSound(sound);
     }
     
@@ -330,6 +508,11 @@ void OpenALSoundSystem::Handle(Core::InitializeEventArg arg) {
         ApplyAction(stereoActions.front());
         stereoActions.pop();
     }
+    while (!streamActions.empty()) {
+        ApplyAction(streamActions.front());
+        streamActions.pop();
+    }
+
 }
 
 void OpenALSoundSystem::Handle(RenderingEventArg arg) {
@@ -357,6 +540,66 @@ void OpenALSoundSystem::Handle(RenderingEventArg arg) {
 }
 
 void OpenALSoundSystem::Handle(Core::ProcessEventArg arg) {
+    
+    for (set<OpenALStreamingSound*>::iterator itr = playingStreams.begin();
+         itr != playingStreams.end();
+         itr++) {
+        // Refresh stream...
+        OpenALStreamingSound *sound = *itr;
+        ALuint source = sound->sourceID;
+        ALint processed;
+        alGetSourcei(source, AL_BUFFERS_PROCESSED, &processed);
+    
+    
+        IStreamingSoundResourcePtr resource = sound->resource;
+        
+        ALuint format = 0;
+        if(resource->GetFormat() == MONO) {
+            if (resource->GetBitsPerSample() == 8)
+                format = AL_FORMAT_MONO8;
+            else if (resource->GetBitsPerSample() == 16)
+                format = AL_FORMAT_MONO16;
+            else
+                throw Exception("unknown number of bits per sample");
+        }
+        else if(resource->GetFormat() == STEREO) {
+            if (resource->GetBitsPerSample() == 8)
+                format = AL_FORMAT_STEREO8;
+            else if (resource->GetBitsPerSample() == 16)
+                format = AL_FORMAT_STEREO16;
+            else
+                throw Exception("Unknown number of bits per sample.");
+        }
+        else
+            throw Exception("Unknown sound format.");
+
+    
+
+        while (processed--) {
+            
+            ALuint buffer;
+        
+            alSourceUnqueueBuffers(source, 1, &buffer);
+
+
+            unsigned int bsize = 32*1024;
+            char buf[bsize];
+
+            unsigned int read = resource->GetBuffer(bsize, buf);
+            //logger.info << "read " << read << logger.end;
+            alBufferData(buffer, format, buf, read, resource->GetFrequency());
+            sound->last_offset += read;
+ 
+            alSourceQueueBuffers(source, 1, &buffer);
+            
+
+            //logger.info << "unqueued " << sound->last_offset << logger.end;
+            
+
+        }
+
+
+    }
 }
 
 void OpenALSoundSystem::Handle(Core::DeinitializeEventArg arg) {
@@ -370,6 +613,163 @@ void OpenALSoundSystem::Handle(Core::DeinitializeEventArg arg) {
         alcDevice = NULL;
     }
 }
+
+OpenALSoundSystem::OpenALStreamingSound::OpenALStreamingSound(IStreamingSoundResourcePtr resource,
+                                                              OpenALSoundSystem* soundsystem)
+     : resource(resource)
+     , soundsystem(soundsystem)                   
+     , maxdist(1000.0)
+     , gain(10.0)
+     , pos(Vector<3,float>(0,0,0))
+     , rel(false)
+     , last_offset(0)
+{
+
+}
+OpenALSoundSystem::OpenALStreamingSound::~OpenALStreamingSound() {
+}
+void OpenALSoundSystem::OpenALStreamingSound::Play() {
+    e.Notify(ALStreamEventArg(PLAY, this));
+}
+
+void OpenALSoundSystem::OpenALStreamingSound::Stop() {
+    e.Notify(ALStreamEventArg(STOP, this));
+}
+
+void OpenALSoundSystem::OpenALStreamingSound::Pause() {
+    e.Notify(ALStreamEventArg(PAUSE, this));
+}
+unsigned int OpenALSoundSystem::OpenALStreamingSound::GetLengthInSamples() {
+    return resource->GetNumberOfSamples();
+}
+
+void OpenALSoundSystem::OpenALStreamingSound::SetElapsedSamples(unsigned int samples) {
+    DEBUG_ME();
+}
+unsigned int OpenALSoundSystem::OpenALStreamingSound::GetElapsedSamples() {
+    DEBUG_ME();
+    return 0;
+}
+Time OpenALSoundSystem::OpenALStreamingSound::CalculateLength() {
+    //@todo optimize these calculations
+    unsigned int numberOfSamples = GetLengthInSamples();
+    unsigned int freq = resource->GetFrequency();
+
+    unsigned int sampleCount = 0;
+    unsigned int sec = 0;
+    while (numberOfSamples--) {
+        sampleCount++;
+        if (sampleCount == freq) {
+            sec++;
+            sampleCount=0;
+        }
+    }
+
+    unsigned int factor = 1000000; //to get microseconds
+    unsigned int gcd = GCD(factor,freq);
+    freq /= gcd;
+    factor /= gcd;
+    return Time(sec, (sampleCount*factor)/freq);
+}
+
+Time OpenALSoundSystem::OpenALStreamingSound::GetLength() {
+    return length;
+}
+bool OpenALSoundSystem::OpenALStreamingSound::IsPlaying() {
+	if (!soundsystem->alcContext) return false;
+
+    ALint state = 0;
+    ALCenum error;
+    alGetSourcei(sourceID, AL_SOURCE_STATE, &state);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+        throw Exception("tried to get source state but got error: "
+                        + Convert::ToString(error));
+    }
+
+    return (state == AL_PLAYING);
+}
+void OpenALSoundSystem::OpenALStreamingSound::SetLooping(bool loop) {
+    if (loop) 
+        e.Notify(ALStreamEventArg(LOOP, this));
+    else
+        e.Notify(ALStreamEventArg(NO_LOOP, this));
+}
+bool OpenALSoundSystem::OpenALStreamingSound::GetLooping() {
+	if (!soundsystem->alcContext)
+		return false;
+
+    ALint loop;
+    ALCenum error;
+    alGetSourcei(sourceID, AL_LOOPING, &loop);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to get looping but got: "
+		      + Convert::ToString(error));
+    }
+    return (loop != AL_FALSE);
+}
+bool OpenALSoundSystem::OpenALStreamingSound::IsStereoSound() {
+    DEBUG_ME();
+    return false;
+}
+bool OpenALSoundSystem::OpenALStreamingSound::IsMonoSound() {
+    DEBUG_ME();
+    return false;
+}
+
+void OpenALSoundSystem::OpenALStreamingSound::SetElapsedTime(Time time) {
+    DEBUG_ME();
+}
+Time OpenALSoundSystem::OpenALStreamingSound::GetElapsedTime() {
+	if (!soundsystem->alcContext)
+		return Time(0,0);
+
+    // unsigned int numberOfSamples = GetElapsedSamples();
+    // unsigned int freq = resource->GetFrequency();
+
+    // unsigned int sampleCount = 0;
+    // unsigned int sec = 0;
+    // while (numberOfSamples--) {
+    //     sampleCount++;
+    //     if (sampleCount == freq) {
+    //         sec++;
+    //         sampleCount=0;
+    //     }
+    // }
+
+    // unsigned int factor = 1000000; //to get microseconds
+    // unsigned int gcd = GCD(factor,freq);
+    // freq /= gcd;
+    // factor /= gcd;
+    // return Time(sec, (sampleCount*factor)/freq); //@todo save this calc!
+    float t; 
+    alGetSourcef(sourceID, AL_SEC_OFFSET, &t);
+    // logger.info << "t: " << t << logger.end;
+    uint64_t s = t;
+    // logger.info << "s: " << s << logger.end;
+    t = t - s;
+    uint32_t us = t * 1000000;
+    // logger.info << "us: " << us << logger.end;
+    return Time(s,us);
+}
+void OpenALSoundSystem::OpenALStreamingSound::SetGain(float gain) {
+    this->gain = gain;
+	if (!soundsystem->alcContext)
+		return;
+
+    ALCenum error;
+    alSourcef(sourceID, AL_GAIN, (ALfloat)gain);
+    if ((error = alGetError()) != AL_NO_ERROR) {
+      throw Exception("tried to set gain but got: "
+		      + Convert::ToString(error));
+    }
+
+}
+float OpenALSoundSystem::OpenALStreamingSound::GetGain() {
+    return this->gain;
+}
+
+
+// --
 
 OpenALSoundSystem::OpenALMonoSound::OpenALMonoSound(ISoundResourcePtr resource, 
                                                     OpenALSoundSystem* soundsystem) 
@@ -396,6 +796,7 @@ void OpenALSoundSystem::OpenALMonoSound::Stop() {
 void OpenALSoundSystem::OpenALMonoSound::Pause() {
     e.Notify(ALMonoEventArg(PAUSE, this));
 }
+
 
 bool OpenALSoundSystem::OpenALMonoSound::IsPlaying() {
 	if (!soundsystem->alcContext) return false;
@@ -628,43 +1029,47 @@ Vector<3,float> OpenALSoundSystem::OpenALMonoSound::GetVelocity() {
     return Vector<3,float>(v[0],v[1],v[2]);
 }
 
-    OpenALSoundSystem::OpenALStereoSound::OpenALStereoSound(ISoundResourcePtr resource, OpenALSoundSystem* soundsystem): soundsystem(soundsystem), res(resource) {
-	SoundFormat format = res->GetFormat();
+OpenALSoundSystem::OpenALStereoSound::OpenALStereoSound(ISoundResourcePtr resource,
+                                                        OpenALSoundSystem* soundsystem)
+: soundsystem(soundsystem), res(resource) {
+    SoundFormat format = res->GetFormat();
 	
-	if (format == MONO) //@todo: maybe this should duplicate the buffer to both left and right channel
-		throw Exception("tried to make a stereo source with a mono sound pointer");
+    if (format == MONO) //@todo: maybe this should duplicate the buffer to both left and right channel
+        throw Exception("tried to make a stereo source with a mono sound pointer");
 
-	char* leftbuffer = new char[res->GetBufferSize()/2]; 
-	char* rightbuffer = new char[res->GetBufferSize()/2]; 
+    // hvorfor laver openal en kopi af lydfilen?
 
-	char* data = res->GetBuffer();    	  	
+    char* leftbuffer = new char[res->GetBufferSize()/2]; // <--
+    char* rightbuffer = new char[res->GetBufferSize()/2]; 
 
-	if (res->GetBitsPerSample() == 8) {
+    char* data = res->GetBuffer();    	  	
+
+    if (res->GetBitsPerSample() == 8) {
 		
-		for (unsigned int i=0; i < (res->GetBufferSize())/2; i++) 
-		{ 
-			leftbuffer[i] = data[i*2]; // left chan
-			rightbuffer[i] = data[i*2+1]; // right chan 
-		} 
+        for (unsigned int i=0; i < (res->GetBufferSize())/2; i++) 
+            { 
+                leftbuffer[i] = data[i*2]; // left chan
+                rightbuffer[i] = data[i*2+1]; // right chan 
+            } 
 
-		left = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(leftbuffer, res->GetBufferSize()/2, res->GetFrequency(), MONO, 8)), soundsystem);
-		right = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(rightbuffer, res->GetBufferSize()/2, res->GetFrequency(), MONO, 8)), soundsystem);
-	}
-	else if (res->GetBitsPerSample() == 16) {
+        left = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(leftbuffer, res->GetBufferSize()/2, res->GetFrequency(), MONO, 8)), soundsystem);
+        right = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(rightbuffer, res->GetBufferSize()/2, res->GetFrequency(), MONO, 8)), soundsystem);
+    }
+    else if (res->GetBitsPerSample() == 16) {
 		
-		int j = 0;
-		for (unsigned int i=0; i < (res->GetBufferSize()); i += 4)  
-		{ 			
-			leftbuffer[j] = data[i]; // left chan
-			leftbuffer[j+1] = data[i+1]; // left chan
-			rightbuffer[j] = data[i+2]; // right chan 
-			rightbuffer[j+1] = data[i+3]; // right chan 
-			j += 2;
-		} 
+        int j = 0;
+        for (unsigned int i=0; i < (res->GetBufferSize()); i += 4)  
+            { 			
+                leftbuffer[j] = data[i]; // left chan
+                leftbuffer[j+1] = data[i+1]; // left chan
+                rightbuffer[j] = data[i+2]; // right chan 
+                rightbuffer[j+1] = data[i+3]; // right chan 
+                j += 2;
+            } 
 
-		left = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(leftbuffer, res->GetBufferSize()/2, res->GetFrequency(), MONO, 16)), soundsystem);
-		right = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(rightbuffer, res->GetBufferSize()/2, res->GetFrequency(), MONO, 16)),soundsystem);
-	}
+        left = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(leftbuffer, res->GetBufferSize()/2, res->GetFrequency(), MONO, 16)), soundsystem);
+        right = new OpenALMonoSound(ISoundResourcePtr(new CustomSoundResource(rightbuffer, res->GetBufferSize()/2, res->GetFrequency(), MONO, 16)),soundsystem);
+    }
 }
 
 OpenALSoundSystem::OpenALStereoSound::~OpenALStereoSound() {
@@ -756,6 +1161,8 @@ IMonoSound* OpenALSoundSystem::OpenALStereoSound::GetRight() {
 char* OpenALSoundSystem::CustomSoundResource::GetBuffer() {
 	return data;
 }
+
+
 
 unsigned int OpenALSoundSystem::CustomSoundResource::GetBufferSize() {
 	return size;

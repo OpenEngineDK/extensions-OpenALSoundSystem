@@ -12,6 +12,7 @@
 
 #include <Core/IModule.h>
 #include <Resources/ISoundResource.h>
+#include <Resources/IStreamingSoundResource.h>
 
 #include <Core/IListener.h>
 #include <Renderers/IRenderer.h>
@@ -29,6 +30,7 @@ namespace OpenEngine {
 using Core::IModule;
 using Core::IListener;
 using Resources::ISoundResourcePtr;
+using Resources::IStreamingSoundResourcePtr;
 using Scene::ISceneNode;
 using Renderers::RenderingEventArg;
 
@@ -39,6 +41,7 @@ public:
     virtual ~ISoundSystem() {};
 
     virtual ISound* CreateSound(ISoundResourcePtr resource) = 0;
+    virtual ISound* CreateSound(IStreamingSoundResourcePtr resource) = 0;
     //virtual void SetRoot(ISceneNode* node) = 0;
 	virtual void SetMasterGain(float gain) = 0;
 	virtual float GetMasterGain() = 0;
