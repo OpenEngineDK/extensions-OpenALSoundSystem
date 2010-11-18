@@ -1,7 +1,7 @@
 SET(CMAKE_INCLUDE_PATH ${OE_LIB_DIR}/openal/include
 		       ${OE_LIB_DIR}/openal/include/AL)
-SET(CMAKE_LIBRARY_PATH ${OE_LIB_DIR}/openal/lib/shared
-		       ${OE_LIB_DIR}/openal/lib/static)
+SET(CMAKE_LIBRARY_PATH ${OE_LIB_DIR}/openal/lib
+		       ${OE_LIB_DIR}/openal/lib)
 
 FIND_PACKAGE(OpenAL)
 
