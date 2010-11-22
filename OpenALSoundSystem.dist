@@ -1,0 +1,7 @@
+# source
+darcs /extensions/OpenALSoundSystem http://openengine.dk/code/extensions/OpenALSoundSystem
+darcs-dev /extensions/OpenALSoundSystem fh.daimi.au.dk:/users/cgd/code/extensions/OpenALSoundSystem
+
+# win lib
+win32 /libraries http://openengine.dk/data/libraries/openal-win32.zip
+
