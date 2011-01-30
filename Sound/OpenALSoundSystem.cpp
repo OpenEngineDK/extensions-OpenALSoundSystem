@@ -278,6 +278,14 @@ void OpenALSoundSystem::ApplyAction(ALStereoEventArg e) {
     case ISound::PAUSE:
         alSourcePausev(2, &list[0]);
         break;
+    case ISound::LOOP:
+        alSourcei(list[0], AL_LOOPING, (ALboolean)true);
+        alSourcei(list[1], AL_LOOPING, (ALboolean)true);
+        break;
+    case ISound::NO_LOOP:
+        alSourcei(list[0], AL_LOOPING, (ALboolean)false);
+        alSourcei(list[1], AL_LOOPING, (ALboolean)false);
+        break;
     default:
         break;
     }
