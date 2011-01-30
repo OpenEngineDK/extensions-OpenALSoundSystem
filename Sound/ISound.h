@@ -35,7 +35,7 @@ private:
 
 public:
     enum Action {
-        PLAY, STOP, PAUSE, LOOP, NO_LOOP
+        PLAY, STOP, PAUSE, LOOP, NO_LOOP, FADE_UP, FADE_DOWN
     };
 
     virtual ~ISound() {}

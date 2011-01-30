@@ -11,6 +11,7 @@
 #define _OPENAL_SOUND_SYSTEM_H_
 
 #include <Sound/ISoundSystem.h>
+#include <Sound/TimedExecutioner.h>
 #include <Display/IViewingVolume.h>
 #include <Scene/ISceneNode.h>
 #include <Core/Event.h>
@@ -79,6 +80,8 @@ private:
     unsigned int device;
     
     SoundNodeVisitor visitor;
+    TimedExecutioner<float> timedExecutioner;
+    Time fadeTime;
 
     inline void MakeDeviceList();
 

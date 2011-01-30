@@ -12,6 +12,7 @@
 #include <Logging/Logger.h>
 #include <Core/Exceptions.h>
 #include <Sound/ISound.h>
+#include <Sound/RWValue.h>
 #include <Utils/Convert.h>
 #include <Math/Math.h>
 #include <Display/IViewingVolume.h>
@@ -238,6 +239,14 @@ void OpenALSoundSystem::ApplyAction(ALMonoEventArg e) {
         break;
     case ISound::NO_LOOP:
         alSourcei(sourceID, AL_LOOPING, (ALboolean)false);
+        break;
+    case ISound::FADE_UP:
+        timedExecutioner.Add(new RWValueCall<IMonoSound,float>(*e.sound, &IMonoSound::GetGain, &IMonoSound::SetGain),
+                          e.sound->GetGain(), 1.0f, fadeTime);
+        break;
+    case ISound::FADE_DOWN:
+        timedExecutioner.Add(new RWValueCall<IMonoSound,float>(*e.sound, &IMonoSound::GetGain, &IMonoSound::SetGain),
+                          e.sound->GetGain(), 0.0f, fadeTime);
         break;
     }
     if ((error = alGetError()) != AL_NO_ERROR)
@@ -598,7 +607,7 @@ void OpenALSoundSystem::Handle(Core::ProcessEventArg arg) {
 
         }
 
-
+        timedExecutioner.Handle(arg);
     }
 }
 
