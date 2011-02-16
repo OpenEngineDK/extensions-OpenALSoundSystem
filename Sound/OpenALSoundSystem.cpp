@@ -20,7 +20,7 @@
 namespace OpenEngine {
 namespace Sound {
 
-#define DEBUG_ME() logger.info << this << " " << __PRETTY_FUNCTION__ << logger.end
+#define DEBUG_ME() //logger.info << this << " " << __PRETTY_FUNCTION__ << logger.end
 
 using OpenEngine::Core::Exception;
 using OpenEngine::Utils::Convert;
