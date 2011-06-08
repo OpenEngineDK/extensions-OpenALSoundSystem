@@ -206,6 +206,9 @@ void OpenALSoundSystem::ApplyAction(ALStreamEventArg e) {
     case ISound::NO_LOOP:
         alSourcei(sourceID, AL_LOOPING, (ALboolean)false);
         break;
+    default:
+        throw Exception("FADE_UP and FADE_DOWN, not implemented");
+        break;
     }
     if ((error = alGetError()) != AL_NO_ERROR)
         throw Exception("Error applying sound action: " + Convert::ToString(error));
