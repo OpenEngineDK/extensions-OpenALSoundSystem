@@ -4,4 +4,5 @@ darcs-dev /extensions/OpenALSoundSystem fh.daimi.au.dk:/users/cgd/code/extension
 
 # win lib
 win32 /libraries http://openengine.dk/data/libraries/openal-win32.zip
+linux /libraries http://openengine.dk/data/libraries/openal-linux32.tar.gz
 
