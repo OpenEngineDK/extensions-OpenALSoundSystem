@@ -1,6 +1,6 @@
 # source
-git /extensions/OpenALSoundSystem https://github.com/OpenEngineDK/extensions-OpenALSoundSystem.git
-git-dev /extensions/OpenALSoundSystem git@github.com:OpenEngineDK/extensions-OpenALSoundSystem.git
+git /extensions/OpenALSoundSystem https://github.com/OpenEngineDK/extensions-OpenALSoundSystem.git
+git-dev /extensions/OpenALSoundSystem git@github.com:OpenEngineDK/extensions-OpenALSoundSystem.git
 
 # win lib
 win32 /libraries http://openengine.dk/data/libraries/openal-win32.zip
